@@ -1,3 +1,3 @@
 class ParsingError(Exception):
-    def __init__(self) -> None:
-        super().__init__("Error: Parsing check file please!")
+    def __init__(self, msg) -> None:
+        super().__init__(msg)
