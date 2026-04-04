@@ -1,4 +1,4 @@
-#!/home/hel-hamo/Projects/Fly-In/venv/bin/python3
+#!/home/darwin/Desktop/Projects_1337/Fly-In/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
