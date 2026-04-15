@@ -1,13 +1,36 @@
-class Hub:
-    def __init__(self, typee, name, x, y, metadata) -> None:
-        self.type: TypeZone = typee
-        self.name: str = name
-        self.x: int = x
-        self.y: int = y
-        self.metadata: dict[str, str] | None = metadata
+from src.Enums.Enums import TypeZone
+from dataclasses import dataclass
 
+
+@dataclass
+class Hub:
+    """Represent a zone node in the parsed graph.
+
+    Attributes:
+        type: Hub category such as start, end, or regular hub.
+        name: Unique hub name.
+        x: Horizontal coordinate.
+        y: Vertical coordinate.
+        metadata: Optional metadata associated with the hub.
+    """
+
+    type: TypeZone
+    name: str
+    x: int
+    y: int
+    metadata: dict[str, str | int | TypeZone] | None = None
+
+
+@dataclass
 class Connection:
-    def __init__(self, zone1: str, zone2: str, metadata: dict[str, int] | None) -> None:
-        self.zone1 = zone1
-        self.zone2 = zone2
-        self.metadata = metadata
+    """Represent an undirected connection between two zones.
+
+    Attributes:
+        zone1: Name of the first connected zone.
+        zone2: Name of the second connected zone.
+        metadata: Optional metadata associated with the connection.
+    """
+
+    zone1: str
+    zone2: str
+    metadata: dict[str, int] | None = None
