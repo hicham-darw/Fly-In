@@ -73,8 +73,6 @@ class Parser:
 
         x = int(splitted[2])
         y = int(splitted[3])
-        if x < 0 or y < 0:
-            raise ParsingError(f"hub {splitted[0][:-1]} negative coordinates.")
 
         self.start_hub = Hub(
             splitted[0][:-1],
@@ -115,8 +113,7 @@ class Parser:
 
         x = int(splitted[2])
         y = int(splitted[3])
-        if x < 0 or y < 0:
-            raise ParsingError(f"hub {splitted[0][:-1]} negative coordinates.")
+
         self.end_hub = Hub(
             splitted[0][:-1],
             splitted[1],
@@ -294,6 +291,7 @@ class Parser:
                         line = line.strip()
                     if not len(line):
                         continue
+
                     if line.startswith("nb_drones:") and not self.nb_drones and self.first_line:
                         self.parse_number_of_drones(line)
                         self.first_line = 0
@@ -318,4 +316,4 @@ class Parser:
 
 if __name__ == '__main__':
     parser = Parser('maps/easy/01_linear_path.txt')
-    parser.read_content_file()
+    parser.parse_content_file()
