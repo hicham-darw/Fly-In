@@ -3,7 +3,7 @@ from src.Graph.Graph import Graph
 
 
 if __name__ == '__main__':
-    parser = Parser('maps/medium/02_circular_loop.txt')
+    parser = Parser('maps/hard/01_maze_nightmare.txt')
     parser.parse_content_file()
     graph = Graph(parser.start_hub, parser.end_hub, parser.hubs)
     graph.add_edges(parser.connections)

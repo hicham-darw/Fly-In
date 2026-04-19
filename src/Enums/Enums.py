@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class TypeZone(Enum):
-    normal = "normal"
-    blocked = "blocked"
-    restricted = "restricted"
-    priority = "priority"
+    priority = 1
+    normal = 2
+    restricted = 3
+    blocked = 4

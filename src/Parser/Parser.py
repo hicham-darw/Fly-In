@@ -163,7 +163,7 @@ class Parser:
             )
         )
 
-    def parse_metadata_of_hub(self, data) -> dict[str, int]:
+    def parse_metadata_of_hub(self, data) -> dict[str, int | str | TypeZone]:
         """Parse hub metadata from a bracketed block.
 
         Args:
@@ -190,8 +190,8 @@ class Parser:
             if d[0].lower() not in ['zone', 'color', 'max_drones']:
                 raise ParsingError("Hub metadata invalid key.")
             
-            if d[0].lower() == 'zone' and d[1] in [e.value for e in TypeZone]:
-                metadata['zone'] = d[1]
+            if d[0].lower() == 'zone' and d[1] in [e.name for e in TypeZone]:
+                metadata['zone'] = TypeZone[d[1]]
             elif d[0].lower() == 'color' and d[1].isalpha():
                 metadata['color'] = d[1]
             elif d[0].lower() == 'max_drones':
