@@ -63,8 +63,8 @@ class Graph:
 
         return len(lst)
       
-    def get_hub(self, name_hub: str) -> Hub:
-        """Return the hub object matching a hub name.
+    def get_hub(self, name_hub: str) -> Hub | None:
+        """Return the hub object by matching a hub name.
 
         Args:
             name_hub: The name of the hub to look up.
@@ -100,19 +100,14 @@ class Graph:
 
             for neighbor in self.adj_graph[current]:
                 type_of_zone = self.get_type_of_zone(neighbor)
-
-                if neighbor not in self.visited:
+                if type_of_zone.value == 4:
+                    continue
+                elif neighbor not in self.visited:
                     self.visited.append(neighbor)
                     new_path = list(path)
                     new_path.append(neighbor)
                     queue.append((neighbor, new_path))
         return []            
-
-    # def sort_neighbors_by_type_zone(self, neighbors) -> list[str]:
-    #     for i in range(len(neighbors) - 1):
-    #         if neighbors[i] == self.start_hub.name:
-    #             pass
-    #         elif neighbors
             
     def get_type_of_zone(self, name_hub: str) -> TypeZone:
         """Return the zone type associated with a hub name.
