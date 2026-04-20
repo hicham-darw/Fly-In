@@ -4,13 +4,14 @@ from src.Exceptions.ParsingError import ParsingError
 from src.Zone.Zone import Hub, Connection
 from src.Enums.Enums import TypeZone
 
+
 class Parser:
     """Parse a map file into drones, hubs, and connections.
 
     The parser reads the input file line by line, validates syntax, and stores
     parsed data for later graph construction and simulation.
     """
-    
+
     def __init__(self, filename: str) -> None:
         """Initialize the parser.
 
@@ -42,7 +43,7 @@ class Parser:
         self.nb_drones = int(match.group(1))
         if self.nb_drones <= 0:
             raise ParsingError("nb_drones")
-    
+
     def parse_start_hub(self, line: str) -> None:
         """Parse the start hub definition.
 
@@ -77,11 +78,11 @@ class Parser:
         self.start_hub = Hub(
             splitted[0][:-1],
             splitted[1],
-            splitted[2],
-            splitted[3],
+            x,
+            y,
             metadata
         )
-    
+
     def parse_end_hub(self, line: str) -> None:
         """Parse the end hub definition.
 
@@ -117,8 +118,8 @@ class Parser:
         self.end_hub = Hub(
             splitted[0][:-1],
             splitted[1],
-            splitted[2],
-            splitted[3],
+            x,
+            y,
             metadata
         )
 
@@ -189,7 +190,7 @@ class Parser:
                 raise ParsingError("Hub metadata {key}={value}")
             if d[0].lower() not in ['zone', 'color', 'max_drones']:
                 raise ParsingError("Hub metadata invalid key.")
-            
+
             if d[0].lower() == 'zone' and d[1] in [e.name for e in TypeZone]:
                 metadata['zone'] = TypeZone[d[1]]
             elif d[0].lower() == 'color' and d[1].isalpha():
@@ -199,7 +200,7 @@ class Parser:
             else:
                 raise ParsingError("metadata of zones [zone, color, max_drones]")
             if metadata['max_drones'] <= 0:
-                metadata[max_drones] = 1
+                metadata['max_drones'] = 1
         return metadata
 
     def parse_connection(self, line) -> None:
@@ -212,6 +213,7 @@ class Parser:
             ParsingError: If the syntax is invalid, if a referenced hub does
                 not exist, or if the connection is malformed.
         """
+        metadata = dict()
         match = re.match(r"^connection: [^ \-]+-[^ \-]+( \[.+\])?", line)
         if match is None:
             raise ParsingError("end_hub doesn't support syntax")
@@ -220,7 +222,7 @@ class Parser:
         if len(splitted) == 3:
             metadata = self.parse_metadata_of_connection(splitted[2])
         elif len(splitted) == 2:
-            metadata = None
+            metadata['max_link_capacity'] = 1
         else:
             raise ParsingError("metadata contains invalid data")
 
@@ -232,7 +234,7 @@ class Parser:
             raise ParsingError(f"{names_hub[0]} must be name from hubs")
         elif names_hub[1] != self.start_hub.name and names_hub[1] != self.end_hub.name and names_hub[1] not in [hub.name for hub in self.hubs]:
             raise ParsingError(f"{names_hub[1]} must be name from hubs")
-    
+
         self.connections.append(
             Connection(
                 names_hub[0],
@@ -262,7 +264,7 @@ class Parser:
         pairs = data.split('=')
         if len(pairs) != 2:
             raise ParsingError('metadata connection must contain {key}={value}')
-        
+
         if pairs[0] != 'max_link_capacity':
             raise ParsingError("metadata connection key must be {max_link_capacity}")
         elif int(pairs[1]) < 0:
@@ -283,7 +285,7 @@ class Parser:
         """
         try:
             with open(self.filename, "r") as file:
-                first_lin = 1
+                first_line = 1
                 for line in file:
                     if line.find('#') != -1:
                         line = line[:line.find('#')].strip()
@@ -315,7 +317,7 @@ class Parser:
         except (ParsingError, Exception) as e:
             print(e)
             exit(42)
-    
+
 
 if __name__ == '__main__':
     parser = Parser('maps/easy/01_linear_path.txt')

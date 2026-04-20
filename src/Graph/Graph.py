@@ -1,6 +1,4 @@
-"""Graph utilities for building adjacency lists and searching paths."""
-
-import sys
+# import sys
 from src.Zone.Zone import Hub, Connection
 from collections import deque
 from src.Enums.Enums import TypeZone
@@ -34,6 +32,8 @@ class Graph:
         Args:
             connections: The list of connections to add.
         """
+        self.connections = connections
+
         for conn in connections:
             pos = self.positionInAdjList(conn.zone2, self.adj_graph[conn.zone1])
             self.adj_graph[conn.zone1].insert(pos, conn.zone2)
@@ -62,7 +62,7 @@ class Graph:
                 return index
 
         return len(lst)
-      
+
     def get_hub(self, name_hub: str) -> Hub | None:
         """Return the hub object by matching a hub name.
 
@@ -80,6 +80,14 @@ class Graph:
             for hub in self.hubs:
                 if hub.name == name_hub:
                     return hub
+
+    def get_connection(self, current_hub: str, next_hub: str) -> Connection:
+        for conn in self.connections:
+            if conn.zone1 == current_hub and conn.zone2 == next_hub:
+                return conn
+            elif conn.zone2 == current_hub and conn.zone1 == next_hub:
+                return conn
+        return None
 
     def breadth_first_search(self) -> list:
         """Return the first path found from the start hub to the end hub.
@@ -107,8 +115,20 @@ class Graph:
                     new_path = list(path)
                     new_path.append(neighbor)
                     queue.append((neighbor, new_path))
-        return []            
-            
+        return []
+
+    def edmonds_karp(self, paths: list[list[str]]) -> None:
+
+        pass
+
+    def update_flow_network(self, current_hub: str, next_hub: str) -> int:
+        for conn in self.connections:
+            if conn.zone1 == current_hub and conn.zone2 == next_hub:
+                return conn.metadata['max_link_capacity']                    
+            elif conn.zone2 == current_hub and conn.zone1 == next_hub:
+                return conn.metadata['capacity_max_link']
+        return 0
+
     def get_type_of_zone(self, name_hub: str) -> TypeZone:
         """Return the zone type associated with a hub name.
 
@@ -127,7 +147,15 @@ class Graph:
                 if name_hub == hub.name:
                     return hub.metadata.get('zone')
 
-    def get_min_flow(self, path_to_exit: list) -> int:
+    def get_flow_connection(self, current_hub: str, next_hub: str) -> int:
+        for conn in self.connections:
+            if conn.zone1 == current_hub and conn.zone2 == next_hub:
+                return conn.metadata['max_link_capacity']
+            elif conn.zone2 == current_hub and conn.zone1 == next_hub:
+                return conn.metadata['max_link_capacity']
+        return -1
+
+    def get_min_flow(self, path_to_exit: list[str]) -> int:
         """Return the minimum flow along a path to the exit.
 
         Args:
@@ -136,4 +164,17 @@ class Graph:
         Returns:
             The minimum flow value found on the path.
         """
-        pass
+        flow = -1
+        for i in range(len(path_to_exit) - 1):
+            flow_conn = self.get_flow_connection(path_to_exit[i], path_to_exit[i + 1])
+
+            if flow_conn == -1:
+                print("error: flow connection -1")
+                return -1
+
+            if flow == -1:
+                flow = flow_conn
+            elif flow != -1 and flow > flow_conn:
+                flow = flow_conn
+        return flow
+

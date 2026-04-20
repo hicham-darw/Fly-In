@@ -13,18 +13,25 @@ if __name__ == '__main__':
 
     print("-" * 40)
     path_to_goal = graph.breadth_first_search()
-    #  continue in main should count flow of network!! 
+    flow_path = graph.get_min_flow(path_to_goal)
+    #  continue in main should count flow of network!!
+    # use this in class graph ... continue!!!
+
     for index in range(len(path_to_goal) - 1):
-        hub = graph.get_hub(path_to_goal[index])
-        if hub.metadata['zone'] == TypeZone.priority:
-            print("priority")
-        elif hub.metadata['zone'] == TypeZone.normal:
-            print("normal")
-        else:
-            print("other")
-    for name_hub in path_to_goal:
-        if name_hub != 'goal':
-            print(f"{name_hub} ---> ", end='')
-        else:
-            print(name_hub, end='')
+        connection = graph.get_connection(path_to_goal[index], path_to_goal[index + 1])
+        connection.metadata['max_link_capacity'] -= flow_path
+        print(connection)
+        print("-" * 30)
+
+    #     if hub.metadata['zone'] == TypeZone.priority:
+    #         print("priority")
+    #     elif hub.metadata['zone'] == TypeZone.normal:
+    #         print("normal")
+    #     else:
+    #         print("other")
+    # for name_hub in path_to_goal:
+    #     if name_hub != 'goal':
+    #         print(f"{name_hub} ---> ", end='')
+    #     else:
+    #         print(name_hub, end='')
     print()
