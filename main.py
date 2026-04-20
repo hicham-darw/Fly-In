@@ -1,5 +1,6 @@
 from src.Parser.Parser import Parser
 from src.Graph.Graph import Graph
+from src.Enums.Enums import TypeZone
 
 
 if __name__ == '__main__':
@@ -11,8 +12,17 @@ if __name__ == '__main__':
         print(f"{key} :::: {value}")
 
     print("-" * 40)
-    path_to_exit = graph.breadth_first_search()
-    for name_hub in path_to_exit:
+    path_to_goal = graph.breadth_first_search()
+    #  continue in main should count flow of network!! 
+    for index in range(len(path_to_goal) - 1):
+        hub = graph.get_hub(path_to_goal[index])
+        if hub.metadata['zone'] == TypeZone.priority:
+            print("priority")
+        elif hub.metadata['zone'] == TypeZone.normal:
+            print("normal")
+        else:
+            print("other")
+    for name_hub in path_to_goal:
         if name_hub != 'goal':
             print(f"{name_hub} ---> ", end='')
         else:

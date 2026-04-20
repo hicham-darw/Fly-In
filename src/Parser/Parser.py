@@ -308,6 +308,9 @@ class Parser:
             if self.start_hub is None or self.end_hub is None or not len(self.hubs)\
             or not len(self.connections) or self.first_line:
                 raise ParsingError("please check config file!")
+            elif self.end_hub.metadata['max_drones'] < self.nb_drones\
+            or self.start_hub.metadata['max_drones'] < self.nb_drones:
+                raise ParsingError("end_hub metadata['max_drones'] must be greather or equal nb_drones")
 
         except (ParsingError, Exception) as e:
             print(e)

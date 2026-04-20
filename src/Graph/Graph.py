@@ -136,16 +136,4 @@ class Graph:
         Returns:
             The minimum flow value found on the path.
         """
-        flow = -1
-        for path in path_to_exit:
-            if path == self.start_hub.name:
-                if flow == -1:
-                    flow = self.start_hub 
-            elif path == self.end_hub.name:
-                pass
-            else:
-                for node in self.hubs:
-                    if path == node.name:
-                       pass
-                        # should found flow correct here
-
+        pass
