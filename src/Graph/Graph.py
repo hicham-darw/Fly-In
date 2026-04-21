@@ -7,7 +7,7 @@ from src.Enums.Enums import TypeZone
 class Graph:
     """Represent the zone graph and the path-search helpers."""
 
-    def __init__(self, start_hub: Hub, end_hub: Hub, hubs: list[Hub]) -> None:
+    def __init__(self, start_hub: Hub, end_hub: Hub, hubs: list[Hub], nb_drones) -> None:
         """Initialize the graph from parsed hubs.
 
         Args:
@@ -15,8 +15,10 @@ class Graph:
             end_hub: The destination hub.
             hubs: The intermediate hubs.
         """
+        self.nb_drones = nb_drones
         self.adj_graph = dict()
         self.start_hub = start_hub
+        
         self.end_hub = end_hub
         self.hubs = hubs
         self.adj_graph[start_hub.name] = []
@@ -99,11 +101,12 @@ class Graph:
         queue = deque()
         queue.append((self.start_hub.name, [self.start_hub.name]))
         self.visited.append(self.start_hub.name)
-
         while len(queue):
 
             current, path = queue.popleft()
+
             if current == self.end_hub.name:
+                self.visited = []
                 return path
 
             for neighbor in self.adj_graph[current]:
@@ -111,23 +114,34 @@ class Graph:
                 if type_of_zone.value == 4:
                     continue
                 elif neighbor not in self.visited:
+
+                    # for checking edmonds karp could be delete it
+                    connection = self.get_connection(current, neighbor)
+                    if connection.metadata['max_link_capacity'] == 0:
+                        continue
+                    #  finish here!!
+
                     self.visited.append(neighbor)
                     new_path = list(path)
                     new_path.append(neighbor)
                     queue.append((neighbor, new_path))
         return []
 
-    def edmonds_karp(self, paths: list[list[str]]) -> None:
+    def edmonds_karp(self) -> list[tuple[list[str], int]]:
+        all_paths = list()
+        while True:
+            path_to_goal = self.breadth_first_search()
+            print("short path: ", path_to_goal)
+            if not path_to_goal:
+                return all_paths
+            flow_path = self.get_min_flow(path_to_goal)
+            all_paths.append({'path': path_to_goal, 'flow': flow_path, 'index': 1})
+            self.update_flow_network(path_to_goal, flow_path)
 
-        pass
-
-    def update_flow_network(self, current_hub: str, next_hub: str) -> int:
-        for conn in self.connections:
-            if conn.zone1 == current_hub and conn.zone2 == next_hub:
-                return conn.metadata['max_link_capacity']                    
-            elif conn.zone2 == current_hub and conn.zone1 == next_hub:
-                return conn.metadata['capacity_max_link']
-        return 0
+    def update_flow_network(self, path: list[str], flow: int) -> None:
+        for index in range(len(path) - 1):
+            connection = self.get_connection(path[index], path[index + 1])
+            connection.metadata['max_link_capacity'] -= flow
 
     def get_type_of_zone(self, name_hub: str) -> TypeZone:
         """Return the zone type associated with a hub name.

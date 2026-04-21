@@ -4,24 +4,34 @@ from src.Enums.Enums import TypeZone
 
 
 if __name__ == '__main__':
-    parser = Parser('maps/hard/01_maze_nightmare.txt')
+    parser = Parser('maps/medium/02_circular_loop.txt')
     parser.parse_content_file()
-    graph = Graph(parser.start_hub, parser.end_hub, parser.hubs)
+    graph = Graph(parser.start_hub, parser.end_hub, parser.hubs, parser.nb_drones)
     graph.add_edges(parser.connections)
     for key, value in graph.adj_graph.items():
         print(f"{key} :::: {value}")
 
     print("-" * 40)
-    path_to_goal = graph.breadth_first_search()
-    flow_path = graph.get_min_flow(path_to_goal)
+
+    all_paths = graph.edmonds_karp()
+    print(f"main paths: {all_paths}")
+
+    while graph.nb_drones:
+        path = all_paths[0]
+        for name in path:
+            hub = graph.get_hub(name)
+              
+    # paths created new when back track function edmonds karp
+
+
+    # for path_flow in all_paths:
+    #     path, flow = path_flow
+    #     print("path:", path)
+    #     print("flow:", flow)
+
     #  continue in main should count flow of network!!
     # use this in class graph ... continue!!!
 
-    for index in range(len(path_to_goal) - 1):
-        connection = graph.get_connection(path_to_goal[index], path_to_goal[index + 1])
-        connection.metadata['max_link_capacity'] -= flow_path
-        print(connection)
-        print("-" * 30)
 
     #     if hub.metadata['zone'] == TypeZone.priority:
     #         print("priority")
@@ -34,4 +44,3 @@ if __name__ == '__main__':
     #         print(f"{name_hub} ---> ", end='')
     #     else:
     #         print(name_hub, end='')
-    print()

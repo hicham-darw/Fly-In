@@ -74,13 +74,14 @@ class Parser:
 
         x = int(splitted[2])
         y = int(splitted[3])
-
+        # start must contain all drones for running and moving drones...
         self.start_hub = Hub(
             splitted[0][:-1],
             splitted[1],
             x,
             y,
             metadata
+            # pass all_drones in hub
         )
 
     def parse_end_hub(self, line: str) -> None:
