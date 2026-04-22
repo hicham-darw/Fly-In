@@ -3,7 +3,7 @@ import re
 from src.Exceptions.ParsingError import ParsingError
 from src.Zone.Zone import Hub, Connection
 from src.Enums.Enums import TypeZone
-
+from src.Drone.Drone import Drone
 
 class Parser:
     """Parse a map file into drones, hubs, and connections.
@@ -74,6 +74,7 @@ class Parser:
 
         x = int(splitted[2])
         y = int(splitted[3])
+
         # start must contain all drones for running and moving drones...
         self.start_hub = Hub(
             splitted[0][:-1],
@@ -81,8 +82,14 @@ class Parser:
             x,
             y,
             metadata
-            # pass all_drones in hub
         )
+        for i in range(self.nb_drones):
+            print("fffffff")
+            if self.start_hub.drones is None:
+                self.start_hub.drones = list()
+            drone = Drone(i + 1)
+            self.start_hub.drones.append(Drone(i + 1))
+
 
     def parse_end_hub(self, line: str) -> None:
         """Parse the end hub definition.

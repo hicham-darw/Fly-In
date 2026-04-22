@@ -16,11 +16,34 @@ if __name__ == '__main__':
     all_paths = graph.edmonds_karp()
     print(f"main paths: {all_paths}")
 
-    while graph.nb_drones:
-        path = all_paths[0]
-        for name in path:
-            hub = graph.get_hub(name)
-              
+    while graph.get_hub(all_paths[0]['path'][-1]).drones is None or len(graph.get_hub(all_paths[0]['path'][-1]).drones) != graph.nb_drones:
+        path = all_paths[0]['path']
+        flow = all_paths[0]['flow']
+        prev_hub = None
+        current_hub = graph.get_hub(path[0])
+        for i in range(1, len(path)):
+            prev_hub = graph.get_hub(path[i - 1])
+            current_hub = graph.get_hub(path[i])
+            while flow:
+                if current_hub.drones is None:
+                    current_hub.drones = list()
+                else:
+                    try:
+                        drone = prev_hub.drones.pop(0)
+                    except IndexError:
+                        break
+                    current_hub.drones.append(drone)
+                    flow -= 1
+            flow = all_paths[0]['flow']
+
+            # should every hub take flow of drones and put them into next_hub
+        graph.nb_drones -= flow
+        break
+    print("-" * 40)
+    print(graph.get_hub(path[i - 4]).drones)
+    for drone in graph.get_hub(path[i - 4]).drones:
+        print(drone.drone_id)
+
     # paths created new when back track function edmonds karp
 
 

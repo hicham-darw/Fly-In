@@ -1,5 +1,7 @@
 from src.Enums.Enums import TypeZone
 from dataclasses import dataclass
+from src.Drone.Drone import Drone
+
 
 
 @dataclass
@@ -19,7 +21,7 @@ class Hub:
     x: int
     y: int
     metadata: dict[str, str | int | TypeZone] | None = None
-
+    drones: list[Drone] | None = None
 
 @dataclass
 class Connection:
