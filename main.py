@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     all_paths = graph.edmonds_karp()
     print(f"main paths: {all_paths}")
-
+    print(f"graph drones: {graph.nb_drones}")
     while graph.get_hub(all_paths[0]['path'][-1]).drones is None or len(graph.get_hub(all_paths[0]['path'][-1]).drones) != graph.nb_drones:
         path = all_paths[0]['path']
         flow = all_paths[0]['flow']
@@ -23,6 +23,13 @@ if __name__ == '__main__':
         current_hub = graph.get_hub(path[0])
         for i in range(1, len(path)):
             prev_hub = graph.get_hub(path[i - 1])
+
+            if not len(prev_hub.drones):
+                break
+
+            if i == len(path) - 1:
+                break
+
             current_hub = graph.get_hub(path[i])
             while flow:
                 if current_hub.drones is None:
@@ -34,12 +41,13 @@ if __name__ == '__main__':
                         break
                     current_hub.drones.append(drone)
                     flow -= 1
+            i = 1
             flow = all_paths[0]['flow']
 
             # should every hub take flow of drones and put them into next_hub
-        graph.nb_drones -= flow
-        break
-    print("-" * 40)
+
+    print("-" * 40, "@")
+    print(f"graph drones: {graph.nb_drones}")
     print(graph.get_hub(path[i - 4]).drones)
     for drone in graph.get_hub(path[i - 4]).drones:
         print(drone.drone_id)
