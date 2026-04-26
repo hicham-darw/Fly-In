@@ -4,7 +4,7 @@ from src.Enums.Enums import TypeZone
 
 
 if __name__ == '__main__':
-    parser = Parser('maps/medium/02_circular_loop.txt')
+    parser = Parser('maps/easy/01_linear_path.txt')
     parser.parse_content_file()
     graph = Graph(parser.start_hub, parser.end_hub, parser.hubs, parser.nb_drones)
     graph.add_edges(parser.connections)
@@ -14,64 +14,46 @@ if __name__ == '__main__':
     print("-" * 40)
 
     all_paths = graph.edmonds_karp()
+    
     print(f"main paths: {all_paths}")
     print(f"graph drones: {graph.nb_drones}")
     while graph.get_hub(all_paths[0]['path'][-1]).drones is None or len(graph.get_hub(all_paths[0]['path'][-1]).drones) != graph.nb_drones:
         path = all_paths[0]['path']
         flow = all_paths[0]['flow']
-        prev_hub = None
         current_hub = graph.get_hub(path[0])
-        for i in range(1, len(path)):
-            prev_hub = graph.get_hub(path[i - 1])
+        index_hub = len(path) - 1
+        while index_hub != 0:
 
-            if not len(prev_hub.drones):
-                break
+            prev_hub = graph.get_hub(path[index_hub - 1])
+            current_hub = graph.get_hub(path[index_hub])
 
-            if i == len(path) - 1:
-                break
-
-            current_hub = graph.get_hub(path[i])
-            while flow:
-                if current_hub.drones is None:
-                    current_hub.drones = list()
-                else:
-                    try:
-                        drone = prev_hub.drones.pop(0)
-                    except IndexError:
-                        break
-                    current_hub.drones.append(drone)
-                    flow -= 1
-            i = 1
-            flow = all_paths[0]['flow']
-
-            # should every hub take flow of drones and put them into next_hub
-
-    print("-" * 40, "@")
-    print(f"graph drones: {graph.nb_drones}")
-    print(graph.get_hub(path[i - 4]).drones)
-    for drone in graph.get_hub(path[i - 4]).drones:
-        print(drone.drone_id)
-
-    # paths created new when back track function edmonds karp
+            if not prev_hub.drones or not len(prev_hub.drones):
+                index_hub -= 1
+                continue
+            
+            print(f"prev_hub drones: {prev_hub.drones}")
+            print(f"current hub drones: {current_hub.drones}")
+            graph.move_drones_to_next_hub(prev_hub, current_hub, flow)
+            index_hub -= 1
+        break
+    print("@" * 40)
+    print("drones of end-hub:", graph.get_hub('darwin').drones)
+    print("drones of start-hub:", graph.start_hub.drones)
 
 
-    # for path_flow in all_paths:
-    #     path, flow = path_flow
-    #     print("path:", path)
-    #     print("flow:", flow)
-
-    #  continue in main should count flow of network!!
-    # use this in class graph ... continue!!!
 
 
-    #     if hub.metadata['zone'] == TypeZone.priority:
-    #         print("priority")
-    #     elif hub.metadata['zone'] == TypeZone.normal:
-    #         print("normal")
-    #     else:
-    #         print("other")
-    # for name_hub in path_to_goal:
-    #     if name_hub != 'goal':
-    #         print(f"{name_hub} ---> ", end='')
-    #     else:
-    #         print(name_hub, end='')
+
+
+
+
+
+
+
+
+
+    #         # should every hub take flow of drones and put them into next_hub
+    # print("@" * 20)
+    # print(f"drones in end_hub: {len(graph.get_hub('goal').drones)}")
+    # print("@" * 20)
+

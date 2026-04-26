@@ -78,10 +78,9 @@ class Graph:
             return self.start_hub
         elif name_hub == self.end_hub.name:
             return self.end_hub
-        else:
-            for hub in self.hubs:
-                if hub.name == name_hub:
-                    return hub
+        for hub in self.hubs:
+            if hub.name == name_hub:
+                return hub
 
     def get_connection(self, current_hub: str, next_hub: str) -> Connection:
         for conn in self.connections:
@@ -142,6 +141,21 @@ class Graph:
         for index in range(len(path) - 1):
             connection = self.get_connection(path[index], path[index + 1])
             connection.metadata['max_link_capacity'] -= flow
+
+    def move_drones_to_next_hub(self, prev_hub: Hub, current_hub: Hub, flow: int) -> None:
+        while flow:
+            if current_hub.drones is None:
+                current_hub.drones = []
+                continue
+            try:
+                drone = prev_hub.drones.pop(0)
+            except IndexError:
+                break
+            current_hub.drones.append(drone)
+            flow -= 1
+
+
+
 
     def get_type_of_zone(self, name_hub: str) -> TypeZone:
         """Return the zone type associated with a hub name.

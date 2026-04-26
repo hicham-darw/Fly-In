@@ -59,11 +59,14 @@ class Parser:
             raise ParsingError("start_hub doesn't support syntax")
         start_bracket = line.find('[')
         if start_bracket < 0:
-            metadata = None
+            metadata = {
+                'zone': TypeZone.normal,
+                'color': None,
+                'max_drones': 1
+            }
         else:
             metadata = self.parse_metadata_of_hub(line[start_bracket:])
-            line = line[:start_bracket].strip()
-        splitted = line.split()
+        splitted = line[:start_bracket].split()
         if len(splitted) != 4:
             raise ParsingError("metadata contains invalid data")
 
@@ -84,7 +87,6 @@ class Parser:
             metadata
         )
         for i in range(self.nb_drones):
-            print("fffffff")
             if self.start_hub.drones is None:
                 self.start_hub.drones = list()
             drone = Drone(i + 1)
@@ -146,11 +148,14 @@ class Parser:
             raise ParsingError("hub doesn't support syntax")
         start_bracket = line.find('[')
         if start_bracket < 0:
-            metadata = None
+            metadata = {
+                'zone': TypeZone.normal,
+                'color': None,
+                'max_drones': 1
+            }
         else:
             metadata = self.parse_metadata_of_hub(line[start_bracket:])
-            line = line[:start_bracket].strip()
-        splitted = line.split()
+        splitted = line[:start_bracket].split()
         if len(splitted) != 4:
             raise ParsingError("metadata contains invalid data")
 
@@ -198,7 +203,6 @@ class Parser:
                 raise ParsingError("Hub metadata {key}={value}")
             if d[0].lower() not in ['zone', 'color', 'max_drones']:
                 raise ParsingError("Hub metadata invalid key.")
-
             if d[0].lower() == 'zone' and d[1] in [e.name for e in TypeZone]:
                 metadata['zone'] = TypeZone[d[1]]
             elif d[0].lower() == 'color' and d[1].isalpha():
@@ -318,11 +322,11 @@ class Parser:
             if self.start_hub is None or self.end_hub is None or not len(self.hubs)\
             or not len(self.connections) or self.first_line:
                 raise ParsingError("please check config file!")
-            elif self.end_hub.metadata['max_drones'] < self.nb_drones\
-            or self.start_hub.metadata['max_drones'] < self.nb_drones:
+            elif self.end_hub.metadata['max_drones'] < self.nb_drones:
                 raise ParsingError("end_hub metadata['max_drones'] must be greather or equal nb_drones")
-
-        except (ParsingError, Exception) as e:
+            elif self.start_hub.metadata['max_drones'] < self.nb_drones:
+                raise ParsingError("start_hub metadat['max_drones'] must be greather ot equal nb_drones")
+        except ParsingError as e:
             print(e)
             exit(42)
 
