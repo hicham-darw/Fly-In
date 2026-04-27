@@ -22,7 +22,7 @@ class Hub:
     y: int
     metadata: dict[str, str | int | TypeZone] | None = None
     drones: list[Drone] | None = None
-
+    available_drones: int = 0
 @dataclass
 class Connection:
     """Represent an undirected connection between two zones.
@@ -36,3 +36,4 @@ class Connection:
     zone1: str
     zone2: str
     metadata: dict[str, int] | None = None
+    available_drones: int = 0

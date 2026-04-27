@@ -116,7 +116,8 @@ class Graph:
 
                     # for checking edmonds karp could be delete it
                     connection = self.get_connection(current, neighbor)
-                    if connection.metadata['max_link_capacity'] == 0:
+                    next_hub = self.get_hub(neighbor)
+                    if connection.available_drones == 0 or next_hub.available_drones == 0:
                         continue
                     #  finish here!!
 
@@ -133,14 +134,16 @@ class Graph:
             print("short path: ", path_to_goal)
             if not path_to_goal:
                 return all_paths
-            flow_path = self.get_min_flow(path_to_goal)
-            all_paths.append({'path': path_to_goal, 'flow': flow_path, 'index': 1})
+            flow_path = self.get_max_flow(path_to_goal)
+            all_paths.append({'path': path_to_goal, 'flow': flow_path})
             self.update_flow_network(path_to_goal, flow_path)
 
     def update_flow_network(self, path: list[str], flow: int) -> None:
         for index in range(len(path) - 1):
             connection = self.get_connection(path[index], path[index + 1])
-            connection.metadata['max_link_capacity'] -= flow
+            next_hub = self.get_hub(path[index + 1])
+            next_hub.available_drones -= flow
+            connection.available_drones -= flow
 
     def move_drones_to_next_hub(self, prev_hub: Hub, current_hub: Hub, flow: int) -> None:
         while flow:
@@ -178,12 +181,12 @@ class Graph:
     def get_flow_connection(self, current_hub: str, next_hub: str) -> int:
         for conn in self.connections:
             if conn.zone1 == current_hub and conn.zone2 == next_hub:
-                return conn.metadata['max_link_capacity']
+                return conn.available_drones
             elif conn.zone2 == current_hub and conn.zone1 == next_hub:
-                return conn.metadata['max_link_capacity']
+                return conn.available_drones
         return -1
 
-    def get_min_flow(self, path_to_exit: list[str]) -> int:
+    def get_max_flow(self, path_to_exit: list[str]) -> int:
         """Return the minimum flow along a path to the exit.
 
         Args:
@@ -194,15 +197,20 @@ class Graph:
         """
         flow = -1
         for i in range(len(path_to_exit) - 1):
+            
             flow_conn = self.get_flow_connection(path_to_exit[i], path_to_exit[i + 1])
+            flow_hub = self.get_hub(path_to_exit[i + 1]).available_drones
+            
+            if flow_hub < flow_conn:
+                if flow == -1:
+                    flow = flow_hub
+                elif flow != -1 and flow > flow_hub:
+                    flow = flow_hub
+            else:
+                if flow == -1:
+                    flow = flow_conn
+                elif flow != -1 and flow > flow_conn:
+                    flow = flow_conn
 
-            if flow_conn == -1:
-                print("error: flow connection -1")
-                return -1
-
-            if flow == -1:
-                flow = flow_conn
-            elif flow != -1 and flow > flow_conn:
-                flow = flow_conn
         return flow
 

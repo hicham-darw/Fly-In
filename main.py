@@ -11,10 +11,20 @@ if __name__ == '__main__':
     for key, value in graph.adj_graph.items():
         print(f"{key} :::: {value}")
 
-    print("-" * 40)
+    print("O" * 40)
+    for conn in graph.connections:
+        print("available_drones in connection:", conn.zone1, conn.zone2, conn.available_drones)
+    print("O" * 40)
+    
+    print("available_drones in hub:", graph.start_hub.name, graph.start_hub.available_drones)
+    for hub in graph.hubs:
+        print("available_drones in hub:", hub.name, hub.available_drones)
+    print("available_drones in hub:", graph.start_hub.name, graph.start_hub.available_drones)
+    
+    print("O" * 40)
 
     all_paths = graph.edmonds_karp()
-    
+    # all_paths = sorted(graph.edmonds_karp(), )
     print(f"main paths: {all_paths}")
     print(f"graph drones: {graph.nb_drones}")
     while graph.get_hub(all_paths[0]['path'][-1]).drones is None or len(graph.get_hub(all_paths[0]['path'][-1]).drones) != graph.nb_drones:
@@ -36,9 +46,6 @@ if __name__ == '__main__':
             graph.move_drones_to_next_hub(prev_hub, current_hub, flow)
             index_hub -= 1
         break
-    print("@" * 40)
-    print("drones of end-hub:", graph.get_hub('darwin').drones)
-    print("drones of start-hub:", graph.start_hub.drones)
 
 
 

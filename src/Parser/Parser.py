@@ -84,11 +84,12 @@ class Parser:
             splitted[1],
             x,
             y,
-            metadata
+            metadata,
         )
+        self.start_hub.available_drones = metadata['max_drones']
         for i in range(self.nb_drones):
             if self.start_hub.drones is None:
-                self.start_hub.drones = list()
+                self.start_hub.drones = []
             drone = Drone(i + 1)
             self.start_hub.drones.append(Drone(i + 1))
 
@@ -130,9 +131,10 @@ class Parser:
             splitted[1],
             x,
             y,
-            metadata
+            metadata,
         )
-
+        self.end_hub.available_drones = self.end_hub.metadata['max_drones']
+ 
     def parse_regular_hub(self, line: str) -> None:
         """Parse a regular hub definition.
 
@@ -166,16 +168,15 @@ class Parser:
             self.name_zones.append(splitted[1])
         else:
             raise ParsingError("name must be a unique name")
-
-        self.hubs.append(
-            Hub(
+        new_hub = Hub (
                 splitted[0][:-1],
                 splitted[1],
                 x,
                 y,
-                metadata
-            )
+                metadata,
         )
+        new_hub.available_drones = new_hub.metadata['max_drones']
+        self.hubs.append(new_hub)
 
     def parse_metadata_of_hub(self, data) -> dict[str, int | str | TypeZone]:
         """Parse hub metadata from a bracketed block.
@@ -246,14 +247,13 @@ class Parser:
             raise ParsingError(f"{names_hub[0]} must be name from hubs")
         elif names_hub[1] != self.start_hub.name and names_hub[1] != self.end_hub.name and names_hub[1] not in [hub.name for hub in self.hubs]:
             raise ParsingError(f"{names_hub[1]} must be name from hubs")
-
-        self.connections.append(
-            Connection(
-                names_hub[0],
-                names_hub[1],
-                metadata
-            )
+        new_conn = Connection(
+            names_hub[0],
+            names_hub[1],
+            metadata
         )
+        new_conn.available_drones = new_conn.metadata['max_link_capacity']
+        self.connections.append(new_conn)
 
     def parse_metadata_of_connection(self, data: str) -> dict[str, int]:
         """Parse connection metadata from a bracketed block.
