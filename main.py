@@ -23,29 +23,36 @@ if __name__ == '__main__':
     
     print("O" * 40)
 
-    all_paths = graph.edmonds_karp()
-    # all_paths = sorted(graph.edmonds_karp(), )
-    print(f"main paths: {all_paths}")
-    print(f"graph drones: {graph.nb_drones}")
-    while graph.get_hub(all_paths[0]['path'][-1]).drones is None or len(graph.get_hub(all_paths[0]['path'][-1]).drones) != graph.nb_drones:
-        path = all_paths[0]['path']
-        flow = all_paths[0]['flow']
-        current_hub = graph.get_hub(path[0])
-        index_hub = len(path) - 1
-        while index_hub != 0:
+    all_data = graph.edmonds_karp()
+    all_data = graph.prepare_drones(all_data)
+    
+    # graph.simulate_turn(all_data)
 
-            prev_hub = graph.get_hub(path[index_hub - 1])
-            current_hub = graph.get_hub(path[index_hub])
+    for data in all_data:
+        print(f"data: {data}")
+    ## just preparing... drones to move between hubs
 
-            if not prev_hub.drones or not len(prev_hub.drones):
-                index_hub -= 1
-                continue
+    #
+    # graph.prepare_drones(all_paths)
+    # while graph.get_hub(all_paths[0]['path'][-1]).drones is None or len(graph.get_hub(all_paths[0]['path'][-1]).drones) != graph.nb_drones:
+    #     path = all_paths[0]['path']
+    #     flow = all_paths[0]['flow']
+    #     current_hub = graph.get_hub(path[0])
+    #     index_hub = len(path) - 1
+    #     while index_hub != 0:
+
+    #         prev_hub = graph.get_hub(path[index_hub - 1])
+    #         current_hub = graph.get_hub(path[index_hub])
+
+    #         if not prev_hub.drones or not len(prev_hub.drones):
+    #             index_hub -= 1
+    #             continue
             
-            print(f"prev_hub drones: {prev_hub.drones}")
-            print(f"current hub drones: {current_hub.drones}")
-            graph.move_drones_to_next_hub(prev_hub, current_hub, flow)
-            index_hub -= 1
-        break
+    #         print(f"prev_hub drones: {prev_hub.drones}")
+    #         print(f"current hub drones: {current_hub.drones}")
+    #         graph.move_drones_to_next_hub(prev_hub, current_hub, flow)
+    #         index_hub -= 1
+    #     break
 
 
 

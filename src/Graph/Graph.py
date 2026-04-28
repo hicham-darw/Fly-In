@@ -2,6 +2,9 @@
 from src.Zone.Zone import Hub, Connection
 from collections import deque
 from src.Enums.Enums import TypeZone
+from src.Drone.Drone import Drone
+
+import sys
 
 
 class Graph:
@@ -131,11 +134,13 @@ class Graph:
         all_paths = list()
         while True:
             path_to_goal = self.breadth_first_search()
-            print("short path: ", path_to_goal)
+
             if not path_to_goal:
+                all_paths = sorted(all_paths, key=lambda x: len(x['path']))
                 return all_paths
+
             flow_path = self.get_max_flow(path_to_goal)
-            all_paths.append({'path': path_to_goal, 'flow': flow_path})
+            all_paths.append({'path': path_to_goal, 'flow': flow_path, 'drones': None})
             self.update_flow_network(path_to_goal, flow_path)
 
     def update_flow_network(self, path: list[str], flow: int) -> None:
@@ -157,6 +162,81 @@ class Graph:
             current_hub.drones.append(drone)
             flow -= 1
 
+    def prepare_drones(
+        self, all_data: list[dict[str, list[str] | int]]
+    ) -> list[dict[str, list[str | Drone] | int]]:
+
+        number_of_drones = self.nb_drones
+        index_data = 0
+        i = 0
+        
+        while i < number_of_drones:
+
+            best_path = self.best_position_of_drone(all_data)
+            
+            flow = best_path['flow']
+            while flow:
+                try:
+                    best_path['drones'].append(self.start_hub.drones[i].drone_id)
+                except IndexError:
+                    break
+                flow -= 1
+                i += 1
+
+        return all_data
+
+    def best_position_of_drone(self, all_data) -> dict[str, list[int | str] | int]:
+        best_path = None
+        
+        for data in all_data:
+            
+            if not data['drones']:
+                data['drones'] = []
+            
+            if best_path is None:
+                best_path = data
+            elif len(data['path']) + (len(data['drones']) // data['flow'])\
+            < len(best_path['path']) + (len(best_path['drones']) // best_path['flow']):
+                best_path = data
+
+        return best_path
+
+
+    def simulate_turn(
+        self, all_data: list[dict[str, list[str | Drone] | int]]
+    ) -> None:
+        while not self.end_hub.drones or len(self.end_hub.drones) != self.nb_drones:
+            for data_turn in all_data:
+                path = data_turn['path']
+                flow = data_turn['flow']
+                drones = data_turn['drones']
+                print(f"path: {path}")
+                print(f"flow: {flow}")
+                print(f"drones: {drones}")
+
+                for index_next_hub in range(len(path) - 1, 0):
+                    index_current_hub = index_next_hub - 1
+
+                    next_hub = self.get_hub(path[index_next_hub])
+                    current_hub = self.get_hub(path[index_current_hub])
+                    if not current_hub.drones:
+                        continue
+                    if not next_hub.drones:
+                        next_hub.drones = []
+                    print("OK!")
+                    counter = flow
+                    while counter:
+                        try:
+                            drone = current_hub.drones.pop(0)
+                            next_hub.drones.append(drone)
+                        except IndexError:
+                            break
+                        counter -= 1
+                    print(f"next_hub.drones: {next_hub.drones}")
+                    print(f"current_hub.drones: {current_hub.drones}")
+
+            
+                    
 
 
 
