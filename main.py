@@ -10,12 +10,7 @@ if __name__ == '__main__':
         sys.exit(0)
     parser = Parser(sys.argv[1])
     parser.parse_content_file()
-    print("start_hub:---------------------------------------")
-    print(f"name: {parser.end_hub.name}")
-    print(f"type: {parser.end_hub.type_zone}")
-    print(f"metadata: {parser.end_hub.metadata}")
-    print(f"available_drones: {parser.end_hub.drones}")
-    print("-" * 50)
+
     graph = Graph(parser.start_hub, parser.end_hub, parser.hubs, parser.nb_drones)
     graph.add_edges(parser.connections)
 

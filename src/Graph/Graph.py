@@ -152,32 +152,59 @@ class Graph:
             connection.available_drones -= flow
 
     def move_drones_to_next_hub(self, current_hub: Hub, next_hub: Hub, flow: int) -> None:
-        is_restricted = 0
 
         while flow:
-            if next_hub.drones is None:
-                next_hub.drones = []
-
-            if not current_hub.drones:
-                break
-
-            # Check both hub and connection capacity (don't decrement connection capacity)
-            if next_hub.available_drones < 1:
-                break
-
-            conn = self.get_connection(current_hub.name, next_hub.name)
-            if conn.available_drones < 1:
-                break
-
-            try:
+            if next_hub.metadata['zone'].value == 3:
+                conn = self.get_connection(current_hub.name, next_hub.name)
+                if conn.drones is None:
+                    conn.drones = []
+                if len(conn.drones) > 0:
+                    if next_hub.drones is None:
+                        next_hub.drones = []
+                    
+                    if next_hub.available_drones < 1:
+                        break
+                    
+                    drone_in_conn = conn.drones.pop(0)
+                    next_hub.drones.append(drone_in_conn)
+                    
+                    next_hub.available_drones -= 1
+                    conn.available_drones += 1
+                if not current_hub.drones:
+                    break
+                
+                if conn.available_drones < 1:
+                    break
                 drone = current_hub.drones.pop(0)
-            except IndexError:
-                break
-            next_hub.drones.append(drone)
-            next_hub.available_drones -= 1
-            current_hub.available_drones += 1
+                conn.drones.append(drone)
+                conn.available_drones -= 1
+                current_hub.available_drones += 1
+            else:
+                if next_hub.drones is None:
+                    next_hub.drones = []
+
+                if not current_hub.drones:
+                    break
+
+                # Check both hub and connection capacity (don't decrement connection capacity)
+                if next_hub.available_drones < 1:
+                    break
+
+                conn = self.get_connection(current_hub.name, next_hub.name)
+                if conn.available_drones < 1:
+                    break
+
+                try:
+                    drone = current_hub.drones.pop(0)
+                except IndexError:
+                    break
+                next_hub.drones.append(drone)
+                next_hub.available_drones -= 1
+                current_hub.available_drones += 1
+
             flow -= 1
-    
+
+
     def reset_capacities_of_drones(self) -> None:
         # reset connections
         for conn in self.connections:
@@ -223,6 +250,7 @@ class Graph:
                 next_hub = self.get_hub(path[i + 1])
                 self.move_drones_to_next_hub(current_hub, next_hub, flow)
                 i -= 1
+        self.turns_simulation += 1
 
     def index_of_hub_let_fly(self, path: list[str], flow: int):
         index_current_hub = 0

@@ -39,3 +39,4 @@ class Connection:
     zone2: str
     metadata: dict[str, int] | None = None
     available_drones: int = 0
+    drones: list[Drone] | None = None
