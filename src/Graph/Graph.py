@@ -121,7 +121,7 @@ class Graph:
                     # for checking edmonds karp could be delete it
                     connection = self.get_connection(current, neighbor)
                     next_hub = self.get_hub(neighbor)
-                    if connection.available_drones == 0 or next_hub.available_drones == 0:
+                    if connection.available_drones < 1 or next_hub.available_drones < 1:
                         continue
                     #  finish here!!
 
@@ -152,50 +152,90 @@ class Graph:
             connection.available_drones -= flow
 
     def move_drones_to_next_hub(self, current_hub: Hub, next_hub: Hub, flow: int) -> None:
+        is_restricted = 0
+
         while flow:
             if next_hub.drones is None:
                 next_hub.drones = []
-                continue
+
+            if not current_hub.drones:
+                break
+
+            # Check both hub and connection capacity (don't decrement connection capacity)
+            if next_hub.available_drones < 1:
+                break
+
+            conn = self.get_connection(current_hub.name, next_hub.name)
+            if conn.available_drones < 1:
+                break
+
             try:
                 drone = current_hub.drones.pop(0)
             except IndexError:
                 break
             next_hub.drones.append(drone)
+            next_hub.available_drones -= 1
+            current_hub.available_drones += 1
             flow -= 1
+    
+    def reset_capacities_of_drones(self) -> None:
+        # reset connections
+        for conn in self.connections:
+            conn.available_drones = conn.metadata.get('max_link_capacity')
+            
+        # reset start Hub 
+        self.start_hub.available_drones = self.nb_drones - len(self.start_hub.drones) 
+
+        # reset regular hubs            
+        for hub in self.hubs + [self.end_hub]:
+            max_drones_in_hub = hub.metadata.get('max_drones')
+            drones_in_hub = 0 if hub.drones is None or not hub.drones else len(hub.drones)
+            hub.available_drones = max_drones_in_hub - drones_in_hub
+
 
     def start_simulation(
         self, all_data: list[dict[str, list[str | Drone] | int]]
     ) -> None:
-        
+        self.reset_capacities_of_drones()
+
         while not self.end_hub.drones or len(self.end_hub.drones) != self.nb_drones:
             self.simulate_turn(all_data)
 
     def simulate_turn(self, all_data: list[dict[str, list[str | Drone] | int]]) -> None:
         for index_data in range(len(all_data)):
-            
             path = all_data[index_data]['path']
             flow = all_data[index_data]['flow']
+            
+            # find first move in path simultaneously 
+            i = 0
+            while i < len(path) - 1: 
+                current_hub = self.get_hub(path[i])
+                next_hub = self.get_hub(path[i + 1])
+                if next_hub.drones is None:
+                    break
+                i += 1
+            
+            if i == len(path) - 1:
+                i -= 1
 
-            index_current_hub = 0
-            index_next_hub = index_current_hub + 1
-        
-            self.index_of_hub_let_fly(path, flow)
-        self.turns_simulation += 1  
+            while i >= 0:
+                current_hub = self.get_hub(path[i])
+                next_hub = self.get_hub(path[i + 1])
+                self.move_drones_to_next_hub(current_hub, next_hub, flow)
+                i -= 1
 
     def index_of_hub_let_fly(self, path: list[str], flow: int):
         index_current_hub = 0
-        index_next_hub = index_current_hub + 1
+        index_next_hub = 1
 
         while index_next_hub < len(path):
-            current_hub = self.get_hub(path[index_current_hub])
             next_hub = self.get_hub(path[index_next_hub])
-
-            if not next_hub.drones:
+            if next_hub.drones is None or not next_hub.drones:
                 break
             index_current_hub += 1
             index_next_hub += 1
 
-        self.update_path_flow(path, index_current_hub, index_next_hub, flow)                
+        self.update_path_flow(path, index_current_hub, index_next_hub, flow)
 
     def update_path_flow(self, path: list[str], index_current_hub: int, index_next_hub: int, flow: int) -> None:
         

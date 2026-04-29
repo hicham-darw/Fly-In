@@ -54,7 +54,7 @@ class Parser:
             ParsingError: If the syntax is invalid or the hub name is not
                 unique.
         """
-        match = re.match(r"^start_hub: [^ \-]+ \d+ \d+( \[.+\])?$", line)
+        match = re.match(r"^start_hub: [^ \-]+ -?\d+ -?\d+( \[.+\])?$", line)
         if match is None:
             raise ParsingError("start_hub doesn't support syntax")
         start_bracket = line.find('[')
@@ -104,7 +104,7 @@ class Parser:
             ParsingError: If the syntax is invalid or the hub name is not
                 unique.
         """
-        match = re.match(r"^end_hub: [^ \-]+ \d+ \d+( \[.+\])?", line)
+        match = re.match(r"^end_hub: [^ \-]+ -?\d+ -?\d+( \[.+\])?", line)
         if match is None:
             raise ParsingError("end_hub doesn't support syntax")
 
@@ -145,8 +145,9 @@ class Parser:
             ParsingError: If the syntax is invalid or the hub name is not
                 unique.
         """
-        match = re.match(r"^hub: [^ \-]+ \d+ \d+( \[.+\])?", line)
+        match = re.match(r"^hub: [^ \-]+ -?\d+ -?\d+( \[.+\])?", line)
         if match is None:
+
             raise ParsingError("hub doesn't support syntax")
         start_bracket = line.find('[')
         if start_bracket < 0:
@@ -155,10 +156,13 @@ class Parser:
                 'color': None,
                 'max_drones': 1
             }
+            splitted = line.split()
         else:
             metadata = self.parse_metadata_of_hub(line[start_bracket:])
-        splitted = line[:start_bracket].split()
-        if len(splitted) != 4:
+            splitted = line[:start_bracket].split()
+        
+        if len(splitted) != 4 and len(splitted) != 5:
+            print(splitted)
             raise ParsingError("metadata contains invalid data")
 
         x = int(splitted[2])
@@ -322,10 +326,12 @@ class Parser:
             if self.start_hub is None or self.end_hub is None or not len(self.hubs)\
             or not len(self.connections) or self.first_line:
                 raise ParsingError("please check config file!")
-            elif self.end_hub.metadata['max_drones'] < self.nb_drones:
-                raise ParsingError("end_hub metadata['max_drones'] must be greather or equal nb_drones")
-            elif self.start_hub.metadata['max_drones'] < self.nb_drones:
-                raise ParsingError("start_hub metadat['max_drones'] must be greather ot equal nb_drones")
+            
+            if self.end_hub.metadata['max_drones'] < self.nb_drones:
+                self.end_hub,metadata['max_drones'] = self.nb_drones
+            
+            if self.start_hub.metadata['max_drones'] < self.nb_drones:
+                self.start_hub.metadata['max_drones'] = self.nb_drones
         except ParsingError as e:
             print(e)
             exit(42)

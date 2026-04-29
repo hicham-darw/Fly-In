@@ -16,13 +16,15 @@ class Hub:
         metadata: Optional metadata associated with the hub.
     """
 
-    type: TypeZone
+    type_zone: TypeZone
     name: str
     x: int
     y: int
     metadata: dict[str, str | int | TypeZone] | None = None
     drones: list[Drone] | None = None
     available_drones: int = 0
+
+
 @dataclass
 class Connection:
     """Represent an undirected connection between two zones.
