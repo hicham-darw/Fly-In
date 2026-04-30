@@ -15,10 +15,10 @@ if __name__ == '__main__':
     graph.add_edges(parser.connections)
 
     all_data = graph.edmonds_karp()
-    
-    graph.start_simulation(all_data)
     for data in all_data:
         print(f"data: {data}")
+    print("----")
+    graph.start_simulation(all_data)
     print("#" * 50)
     print(f"turns: {graph.turns_simulation}")
     print("#" * 50)

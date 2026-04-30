@@ -1,4 +1,4 @@
-# import sys
+import sys
 from src.Zone.Zone import Hub, Connection
 from collections import deque
 from src.Enums.Enums import TypeZone
@@ -137,12 +137,23 @@ class Graph:
             path_to_goal = self.breadth_first_search()
 
             if not path_to_goal:
-                all_paths = sorted(all_paths, key=lambda x: len(x['path']))
+                all_paths = sorted(all_paths, key=lambda x: x['turns'])
                 return all_paths
 
             flow_path = self.get_max_flow(path_to_goal)
-            all_paths.append({'path': path_to_goal, 'flow': flow_path})
+            number_of_turns_in_path = self.count_turns_of_path(path_to_goal)
+            all_paths.append({'path': path_to_goal, 'flow': flow_path, 'turns': number_of_turns_in_path})
             self.update_flow_network(path_to_goal, flow_path)
+
+    def count_turns_of_path(self, path: list[str]) -> int:
+        number_of_turns = 0
+        for i in range(0, len(path) - 1):
+            next_hub = self.get_hub(path[i + 1])
+            if next_hub.metadata['zone'].value == 3:
+                number_of_turns += 2
+            else:
+                number_of_turns += 1
+        return number_of_turns
 
     def update_flow_network(self, path: list[str], flow: int) -> None:
         for index in range(len(path) - 1):
@@ -185,6 +196,8 @@ class Graph:
 
                 if not current_hub.drones:
                     break
+                print(f"next_hub.name: {next_hub.name}")
+                print(f"next_hub.available_drones: {next_hub.available_drones}")
 
                 # Check both hub and connection capacity (don't decrement connection capacity)
                 if next_hub.available_drones < 1:
@@ -201,9 +214,7 @@ class Graph:
                 next_hub.drones.append(drone)
                 next_hub.available_drones -= 1
                 current_hub.available_drones += 1
-
             flow -= 1
-
 
     def reset_capacities_of_drones(self) -> None:
         # reset connections
@@ -225,7 +236,7 @@ class Graph:
     ) -> None:
         self.reset_capacities_of_drones()
 
-        while not self.end_hub.drones or len(self.end_hub.drones) != self.nb_drones:
+        while self.end_hub.drones is None or len(self.end_hub.drones) != self.nb_drones:
             self.simulate_turn(all_data)
 
     def simulate_turn(self, all_data: list[dict[str, list[str | Drone] | int]]) -> None:
@@ -248,6 +259,7 @@ class Graph:
             while i >= 0:
                 current_hub = self.get_hub(path[i])
                 next_hub = self.get_hub(path[i + 1])
+
                 self.move_drones_to_next_hub(current_hub, next_hub, flow)
                 i -= 1
         self.turns_simulation += 1

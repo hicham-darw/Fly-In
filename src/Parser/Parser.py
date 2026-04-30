@@ -37,9 +37,10 @@ class Parser:
             ParsingError: If the line does not match the expected syntax or if
                 the value is not strictly positive.
         """
-        match = re.match(r"nb_drones: (\d+)", line)
+        match = re.match(r"nb_drones: +?(\d+)", line)
         if not match:
-            raise ParsingError('line nb_drones doesn\'t support syntax.')
+            raise ParsingError('nb_drones must be greather than Zero.')
+
         self.nb_drones = int(match.group(1))
         if self.nb_drones <= 0:
             raise ParsingError("nb_drones")
@@ -56,19 +57,22 @@ class Parser:
         """
         match = re.match(r"^start_hub: [^ \-]+ -?\d+ -?\d+( \[.+\])?$", line)
         if match is None:
-            raise ParsingError("start_hub doesn't support syntax")
+            raise ParsingError("somthing Wrong! please check line start_hub:")
+        
+        metadata = {
+            'zone': TypeZone.normal,
+            'color': None,
+            'max_drones': 1
+        }
         start_bracket = line.find('[')
-        if start_bracket < 0:
-            metadata = {
-                'zone': TypeZone.normal,
-                'color': None,
-                'max_drones': 1
-            }
-        else:
+        if start_bracket >= 0:
             metadata = self.parse_metadata_of_hub(line[start_bracket:])
-        splitted = line[:start_bracket].split()
+            splitted = line[:start_bracket].split()
+        else:
+            splitted = line.split()
+        
         if len(splitted) != 4:
-            raise ParsingError("metadata contains invalid data")
+            raise ParsingError("please check start_hub line.")
 
         if splitted[1] not in self.name_zones:
             self.name_zones.append(splitted[1])
@@ -80,17 +84,16 @@ class Parser:
 
         # start must contain all drones for running and moving drones...
         self.start_hub = Hub(
-            splitted[0][:-1],
-            splitted[1],
-            x,
-            y,
-            metadata,
+            type_zone=splitted[0][:-1],
+            name=splitted[1],
+            x=x,
+            y=y,
+            metadata=metadata,
         )
         self.start_hub.available_drones = metadata['max_drones']
         for i in range(self.nb_drones):
             if self.start_hub.drones is None:
                 self.start_hub.drones = []
-            drone = Drone(i + 1)
             self.start_hub.drones.append(Drone(i + 1))
 
 
@@ -106,14 +109,20 @@ class Parser:
         """
         match = re.match(r"^end_hub: [^ \-]+ -?\d+ -?\d+( \[.+\])?", line)
         if match is None:
-            raise ParsingError("end_hub doesn't support syntax")
+            raise ParsingError("end_hub doesn't support syntax, please check line end_hub")
+
+        metadata = {
+            'zone': TypeZone.normal,
+            'color': None,
+            'max_drones': 1
+        }
 
         start_bracket = line.find('[')
-        if start_bracket < 0:
-            metadata = None
-        else:
+        if start_bracket >= 0:
             metadata = self.parse_metadata_of_hub(line[start_bracket:])
             line = line[:start_bracket].strip()
+        else:
+            line = line.strip()
         splitted = line.split()
         if len(splitted) != 4:
             raise ParsingError("metadata contains invalid data")
@@ -127,13 +136,14 @@ class Parser:
         y = int(splitted[3])
 
         self.end_hub = Hub(
-            splitted[0][:-1],
-            splitted[1],
-            x,
-            y,
-            metadata,
+            type_zone=splitted[0][:-1],
+            name=splitted[1],
+            x=x,
+            y=y,
+            metadata=metadata,
         )
-        self.end_hub.available_drones = self.end_hub.metadata['max_drones']
+        self.end_hub.metadata['max_drones'] = self.nb_drones
+        self.end_hub.available_drones = metadata['max_drones']
  
     def parse_regular_hub(self, line: str) -> None:
         """Parse a regular hub definition.
@@ -147,34 +157,32 @@ class Parser:
         """
         match = re.match(r"^hub: [^ \-]+ -?\d+ -?\d+( \[.+\])?", line)
         if match is None:
-
             raise ParsingError("hub doesn't support syntax")
+
+        metadata = {
+            'zone': TypeZone.normal,
+            'color': None,
+            'max_drones': 1
+        }
         start_bracket = line.find('[')
-        if start_bracket < 0:
-            metadata = {
-                'zone': TypeZone.normal,
-                'color': None,
-                'max_drones': 1
-            }
-            splitted = line.split()
-        else:
+        if start_bracket >= 0:
             metadata = self.parse_metadata_of_hub(line[start_bracket:])
-            splitted = line[:start_bracket].split()
-        
-        if len(splitted) != 4 and len(splitted) != 5:
-            print(splitted)
+            line = line[:start_bracket]
+
+        splitted_without_meta = line.split()
+        if len(splitted_without_meta) != 4:
             raise ParsingError("metadata contains invalid data")
 
-        x = int(splitted[2])
-        y = int(splitted[3])
+        x = int(splitted_without_meta[2])
+        y = int(splitted_without_meta[3])
 
-        if splitted[1] not in self.name_zones:
-            self.name_zones.append(splitted[1])
+        if splitted_without_meta[1] not in self.name_zones:
+            self.name_zones.append(splitted_without_meta[1])
         else:
             raise ParsingError("name must be a unique name")
         new_hub = Hub (
-                splitted[0][:-1],
-                splitted[1],
+                splitted_without_meta[0][:-1],
+                splitted_without_meta[1],
                 x,
                 y,
                 metadata,
@@ -200,24 +208,28 @@ class Parser:
             'color': None,
             'max_drones': 1
         }
+        
         if len(data.split()) > 3:
-            raise ParsingError("metadata must be contains 3 pairs.")
+            raise ParsingError("metadata contains 3 pairs at most.")
+        
         for pairs in data.split():
-            d = pairs.split('=')
-            if len(d) != 2:
+            key_val_data = pairs.split('=')
+            if len(key_val_data) != 2:
                 raise ParsingError("Hub metadata {key}={value}")
-            if d[0].lower() not in ['zone', 'color', 'max_drones']:
+            
+            if key_val_data[0].lower() not in ['zone', 'color', 'max_drones']:
                 raise ParsingError("Hub metadata invalid key.")
-            if d[0].lower() == 'zone' and d[1] in [e.name for e in TypeZone]:
-                metadata['zone'] = TypeZone[d[1]]
-            elif d[0].lower() == 'color' and d[1].isalpha():
-                metadata['color'] = d[1]
-            elif d[0].lower() == 'max_drones':
-                metadata['max_drones'] = int(d[1])
+            
+            if key_val_data[0].lower() == 'zone' and key_val_data[1] in [e.name for e in TypeZone]:
+                metadata['zone'] = TypeZone[key_val_data[1]]
+            elif key_val_data[0].lower() == 'color' and key_val_data[1].isalpha():
+                metadata['color'] = key_val_data[1]
+            elif key_val_data[0].lower() == 'max_drones':
+                metadata['max_drones'] = int(key_val_data[1])
             else:
-                raise ParsingError("metadata of zones [zone, color, max_drones]")
-            if metadata['max_drones'] <= 0:
-                metadata['max_drones'] = 1
+                raise ParsingError("metadata of zones [zone, color, max_drones].")
+            if metadata['max_drones'] < 0:
+                raise ParsingError("metadta max_drones must be greather than Zero.")
         return metadata
 
     def parse_connection(self, line) -> None:
@@ -301,7 +313,6 @@ class Parser:
         """
         try:
             with open(self.filename, "r") as file:
-                first_line = 1
                 for line in file:
                     if line.find('#') != -1:
                         line = line[:line.find('#')].strip()
@@ -327,11 +338,6 @@ class Parser:
             or not len(self.connections) or self.first_line:
                 raise ParsingError("please check config file!")
             
-            if self.end_hub.metadata['max_drones'] < self.nb_drones:
-                self.end_hub,metadata['max_drones'] = self.nb_drones
-            
-            if self.start_hub.metadata['max_drones'] < self.nb_drones:
-                self.start_hub.metadata['max_drones'] = self.nb_drones
         except ParsingError as e:
             print(e)
             exit(42)
