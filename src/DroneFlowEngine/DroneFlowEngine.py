@@ -37,7 +37,7 @@ class DroneFlowEngine:
             print("all_data is empty!");
             return        
 
-        while self.__graph.get_end_hub().drones is None or len(self.__graph._get_end_hub().drones) != self.__graph.get_number_of_drones():
+        while self.__graph.get_end_hub().drones is None or len(self.__graph.get_end_hub().drones) != self.__graph.get_number_of_drones():
             self.simulate_turn(all_data)
 
     def simulate_turn(self, all_data: list[dict[str, list[str | Drone] | int]]) -> None:
@@ -45,17 +45,18 @@ class DroneFlowEngine:
             path = all_data[index_data]['path']
             flow = all_data[index_data]['flow']
 
-            # find first move in path simultaneously 
+            # find first move in path simultaneously # check simulate_turn rafcatoring hard here!
             i = 0
             while i < len(path) - 1: 
                 current_hub = self.__graph.get_hub_by_name(path[i])
                 next_hub = self.__graph.get_hub_by_name(path[i + 1])
                 if next_hub.drones is None:
+                    print("Ok!")
                     break
                 i += 1
             
             if i == len(path) - 1:
-                i -= s
+                i -= 1
 
             while i >= 0:
                 current_hub = self.__graph.get_hub_by_name(path[i])
@@ -75,6 +76,7 @@ class DroneFlowEngine:
                 return all_paths
 
             flow_path = self.__graph.get_max_flow(path_to_goal)
+            print("flow_path:", flow_path)
             number_of_turns_in_path = self.count_turns_in_path(path_to_goal)
             all_paths.append({'path': path_to_goal, 'flow': flow_path, 'turns': number_of_turns_in_path})
             self.update_flow_network(path_to_goal, flow_path)

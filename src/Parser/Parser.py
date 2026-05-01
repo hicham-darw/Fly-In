@@ -90,12 +90,15 @@ class Parser:
             y=y,
             metadata=metadata,
         )
+        self.start_hub.metadata['max_drones'] = self.nb_drones
         self.start_hub.available_drones = metadata['max_drones']
+        self.create_drones_inside_start_hub()
+
+    def create_drones_inside_start_hub(self) -> None:
         for i in range(self.nb_drones):
             if self.start_hub.drones is None:
                 self.start_hub.drones = []
             self.start_hub.drones.append(Drone(i + 1))
-
 
     def parse_end_hub(self, line: str) -> None:
         """Parse the end hub definition.
