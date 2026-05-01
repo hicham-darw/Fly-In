@@ -11,6 +11,7 @@ if __name__ == '__main__':
     if len(sys.argv) != 2:
         print("need file!")
         sys.exit(0)
+
     parser = Parser(sys.argv[1])
     parser.parse_content_file()
 
@@ -23,12 +24,21 @@ if __name__ == '__main__':
     print("data end_hub:", graph_builder.get_end_hub())
     for data_hub in graph_builder.get_regular_hubs():
         print("data hub:", data_hub)
+
     flow_engine = DroneFlowEngine(graph_builder, graph_builder.get_number_of_drones())
-    flow_engine.reset_capacities_of_drones()
     all_data = flow_engine.edmonds_karp()
-    print(f"all_data: {all_data}")
+
+    graph_builder.reset_capacities_of_drones()
+    # print("start_hub:", graph_builder.get_start_hub().drones)
+    # print("end_hub:", graph_builder.get_end_hub().drones)
+    # for hub in graph_builder.get_regular_hubs():
+    #     print("regular hub:", hub.drones)
+    # print("-" * 50)
+    # print(f"all_data: {all_data}")
     # should check data of each one here ....! handle infinite loop in start_simulation()
-    sys.exit(0)
+    
+    # path = all_data[0]['path']
+    # sys.exit(0)
     flow_engine.start_simulation(all_data)
 
     # print(f"{[drone.drone_id for drone in graph.end_hub.drones]}")

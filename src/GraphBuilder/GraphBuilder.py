@@ -1,5 +1,5 @@
 from src.Zone.Zone import Hub, Connection
-from typing import Self
+from typing_extensions import Self
 from src.Enums.Enums import TypeZone
 
 
@@ -214,35 +214,53 @@ class GraphBuilder:
         return flow
 
     # update data 
+    def reset_capacities_of_drones(self) -> None:
+        # reset connections
+        for conn in self.get_connections():
+            if conn.drones:
+                conn.available_drones = conn.metadata.get('max_link_capacity') - len(conn.drones)
+            else:
+                conn.available_drones = conn.metadata.get('max_link_capacity')
+        
+        # reset start Hub 
+        if self.get_start_hub() and self.get_start_hub().drones:
+            self.get_start_hub().available_drones = self.get_number_of_drones() - len(self.get_start_hub().drones) 
+        else:
+            self.get_start_hub().available_drones = self.get_number_of_drones()
 
-    def move_drones_to_next_hub(self, current_hub: Hub, next_hub: Hub, flow: int) -> None:
+        # reset end hub
+        if self.get_end_hub() and self.get_end_hub().drones:
+            self.get_end_hub().available_drones = self.get_number_of_drones() - len(self.get_end_hub().drones)
+        else:
+            self.get_end_hub().available_drones = self.get_number_of_drones()
 
+        # reset regular hubs            
+        for hub in self.get_regular_hubs():
+            max_drones_in_hub = hub.metadata.get('max_drones')
+            drones_in_hub = hub.metadata['max_drones'] if hub.drones is None or not hub.drones else hub.metadata['max_drones'] - len(hub.drones)
+            hub.available_drones = max_drones_in_hub - drones_in_hub
+
+    def move_drones_to_next_hub(self, current_hub_name: str, next_hub_name: str, flow: int) -> None:
+        current_hub = self.get_hub_by_name(current_hub_name)
+        next_hub = self.get_hub_by_name(next_hub_name)
         while flow:
             if next_hub.metadata['zone'].value == 3:
-                conn = self.get_connection(current_hub.name, next_hub.name)
+                conn = self.get_connection_by_names(current_hub.name, next_hub.name)
                 if conn.drones is None:
                     conn.drones = []
+
                 if len(conn.drones) > 0:
                     if next_hub.drones is None:
                         next_hub.drones = []
-                    
-                    if next_hub.available_drones < 1:
-                        break
-                    
+
                     drone_in_conn = conn.drones.pop(0)
-                    next_hub.drones.append(drone_in_conn)
-                    
-                    next_hub.available_drones -= 1
-                    conn.available_drones += 1
+                    next_hub.drones.append(drone_in_conn)                    
+
                 if not current_hub.drones:
                     break
-                
-                if conn.available_drones < 1:
-                    break
+
                 drone = current_hub.drones.pop(0)
                 conn.drones.append(drone)
-                conn.available_drones -= 1
-                current_hub.available_drones += 1
             else:
                 if next_hub.drones is None:
                     next_hub.drones = []
@@ -251,18 +269,9 @@ class GraphBuilder:
                     break
 
                 # Check both hub and connection capacity (don't decrement connection capacity)
-                if next_hub.available_drones < 1:
-                    break
-
-                conn = self.get_connection(current_hub.name, next_hub.name)
-                if conn.available_drones < 1:
-                    break
-
                 try:
                     drone = current_hub.drones.pop(0)
                 except IndexError:
                     break
                 next_hub.drones.append(drone)
-                next_hub.available_drones -= 1
-                current_hub.available_drones += 1
             flow -= 1

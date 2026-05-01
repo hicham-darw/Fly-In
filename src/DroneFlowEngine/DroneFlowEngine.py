@@ -35,7 +35,7 @@ class DroneFlowEngine:
     ) -> None:
         if not all_data:
             print("all_data is empty!");
-            return        
+            return
 
         while self.__graph.get_end_hub().drones is None or len(self.__graph.get_end_hub().drones) != self.__graph.get_number_of_drones():
             self.simulate_turn(all_data)
@@ -51,20 +51,24 @@ class DroneFlowEngine:
                 current_hub = self.__graph.get_hub_by_name(path[i])
                 next_hub = self.__graph.get_hub_by_name(path[i + 1])
                 if next_hub.drones is None:
-                    print("Ok!")
                     break
                 i += 1
-            
             if i == len(path) - 1:
                 i -= 1
 
             while i >= 0:
                 current_hub = self.__graph.get_hub_by_name(path[i])
                 next_hub = self.__graph.get_hub_by_name(path[i + 1])
-
-                self.__graph.move_drones_to_next_hub(current_hub, next_hub, flow)
+                print(f"222current_hub drones: {current_hub.name} {current_hub.drones}")
+                print(f"222next_hub drones:  {next_hub.name} {next_hub.drones}")
+                self.__graph.move_drones_to_next_hub(path[i], path[i + 1], flow)
+                print(f"333current_hub drones: {current_hub.name} {current_hub.drones}")
+                print(f"333next_hub drones: {next_hub.name} {next_hub.drones}")
+                print("-" * 100)
                 i -= 1
         self.turns_simulation += 1
+        print("Turns now:", self.turns_simulation)
+        print("@" * 100, "\n")
 
     def edmonds_karp(self) -> list[dict[str, list[str], int]]:
         all_paths = list()
@@ -76,7 +80,7 @@ class DroneFlowEngine:
                 return all_paths
 
             flow_path = self.__graph.get_max_flow(path_to_goal)
-            print("flow_path:", flow_path)
+
             number_of_turns_in_path = self.count_turns_in_path(path_to_goal)
             all_paths.append({'path': path_to_goal, 'flow': flow_path, 'turns': number_of_turns_in_path})
             self.update_flow_network(path_to_goal, flow_path)
@@ -130,24 +134,6 @@ class DroneFlowEngine:
                     new_path.append(neighbor)
                     queue.append((neighbor, new_path))
         return []
-
-    # update data
-    def reset_capacities_of_drones(self) -> None:
-        # reset connections
-        for conn in self.__graph.get_connections():
-            conn.available_drones = conn.metadata.get('max_link_capacity')
-            
-        # reset start Hub 
-        if self.__graph.get_start_hub():
-            self.__graph.get_start_hub().available_drones = self.__graph.get_number_of_drones() - len(self.__graph.get_start_hub().drones) 
-        
-        if self.__graph.get_end_hub() and self.__graph.get_end_hub().drones:
-            self.__graph.get_end_hub().available_drones = self.__graph.get_number_of_drones() - len(self.__graph.get_end_hub().drones)
-        # reset regular hubs            
-        for hub in self.__graph.get_regular_hubs():
-            max_drones_in_hub = hub.metadata.get('max_drones')
-            drones_in_hub = 0 if hub.drones is None or not hub.drones else len(hub.drones)
-            hub.available_drones = max_drones_in_hub - drones_in_hub
 
     # helpers
     def index_of_hub_let_fly(self, path: list[str], flow: int):
