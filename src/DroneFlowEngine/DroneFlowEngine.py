@@ -84,7 +84,7 @@ class DroneFlowEngine:
             number_of_turns_in_path = self.count_turns_in_path(path_to_goal)
             all_paths.append({'path': path_to_goal, 'flow': flow_path, 'turns': number_of_turns_in_path})
             self.update_flow_network(path_to_goal, flow_path)
-        return all_paths
+        return []
 
     def count_turns_in_path(self, path: list[str]) -> int:
         number_of_turns = 0

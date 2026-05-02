@@ -22,7 +22,7 @@ class GraphBuilder:
 
         self.__adjacency_list: dict[str, list[str]] = dict()
     
-    #  setters method for builder
+    #  setter methods for builder
     def set_number_of_drones(self, number_of_drones: int) -> Self:
         """setter method
             set number of drones
@@ -55,6 +55,7 @@ class GraphBuilder:
         for hub in hubs:
             self.__hubs.append(hub)
         return self
+
     def set_connections(self, connections: list[Connection]) -> Self:
         self.__connections = connections
         return self
@@ -79,7 +80,7 @@ class GraphBuilder:
             self.__adjacency_list[conn.zone2].insert(pos, conn.zone1)
         return self
     
-    # getters method for Encapsulation
+    # getter methods
     def get_position_in_adjacency_list(self, name_hub: str, lst: list[str]) -> int:
         """Return the insertion index for a hub based on zone priority.
 
@@ -213,33 +214,7 @@ class GraphBuilder:
                     flow = flow_conn
         return flow
 
-    # update data 
-    def reset_capacities_of_drones(self) -> None:
-        # reset connections
-        for conn in self.get_connections():
-            if conn.drones:
-                conn.available_drones = conn.metadata.get('max_link_capacity') - len(conn.drones)
-            else:
-                conn.available_drones = conn.metadata.get('max_link_capacity')
-        
-        # reset start Hub 
-        if self.get_start_hub() and self.get_start_hub().drones:
-            self.get_start_hub().available_drones = self.get_number_of_drones() - len(self.get_start_hub().drones) 
-        else:
-            self.get_start_hub().available_drones = self.get_number_of_drones()
-
-        # reset end hub
-        if self.get_end_hub() and self.get_end_hub().drones:
-            self.get_end_hub().available_drones = self.get_number_of_drones() - len(self.get_end_hub().drones)
-        else:
-            self.get_end_hub().available_drones = self.get_number_of_drones()
-
-        # reset regular hubs            
-        for hub in self.get_regular_hubs():
-            max_drones_in_hub = hub.metadata.get('max_drones')
-            drones_in_hub = hub.metadata['max_drones'] if hub.drones is None or not hub.drones else hub.metadata['max_drones'] - len(hub.drones)
-            hub.available_drones = max_drones_in_hub - drones_in_hub
-
+    # update data
     def move_drones_to_next_hub(self, current_hub_name: str, next_hub_name: str, flow: int) -> None:
         current_hub = self.get_hub_by_name(current_hub_name)
         next_hub = self.get_hub_by_name(next_hub_name)
