@@ -1,6 +1,7 @@
 from src.Zone.Zone import Hub, Connection
 from typing_extensions import Self
 from src.Enums.Enums import TypeZone, MetaDataOfHub
+from src.Drone.Drone import Drone
 
 
 class GraphBuilder:
@@ -290,6 +291,13 @@ class GraphBuilder:
                 elif flow > flow_conn:
                     flow = flow_conn
         return flow
+
+    def build(self, graph_data: dict[str, list[Hub] | Hub | int | list[Connection]]) -> None:
+        self.set_number_of_drones(graph_data.get('nb_drones'))\
+        .set_start_hub(graph_data.get('start_hub'))\
+        .set_end_hub(graph_data.get('end_hub'))\
+        .set_hubs(graph_data.get('hubs'))\
+        .set_connections(graph_data.get('connections')).set_adjacency_list()
 
     # update data
     def move_drone_has_restricted_zone(self, current_hub_name: str, next_hub_name: str):

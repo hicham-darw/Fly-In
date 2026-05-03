@@ -6,7 +6,7 @@ from src.Enums.Enums import TypeZone
 
 class DroneFlowEngine:
 
-    def __init__(self, graph: Graph, number_of_drones: int) -> None:
+    def __init__(self, graph: Graph) -> None:
         """Constructor engine of flow drones
 
         Args:
@@ -14,22 +14,36 @@ class DroneFlowEngine:
             drones (list[Drone]): [drones]
         """
         self.__graph = graph
-        self.__drones: list[Drone] = self.set_drones(number_of_drones)
+        self.__drones: list[Drone] = []
 
         self.turns_simulation = 0
         
         self.visited = []
 
     # setter method
-    def set_drones(self, number_of_drones: int) -> None:
+    def set_drones_in_start_hub(self) -> None:
         self.__drones = []
-        for i in range(number_of_drones):
+        for i in range(self.__graph.get_number_of_drones()):
             self.__drones.append(Drone(i + 1))
+        self.__graph.get_start_hub().drones = self.__drones
 
     # getters method ----------------->
     def get_graph(self) -> Graph:
         return self.__graph
 
+    def run(self) -> None:
+        """put drones in start_hub and starting simulation
+        
+        Args:
+            None
+        
+        Returns:
+            None
+        """
+        self.set_drones_in_start_hub()
+        all_data = self.edmonds_karp()
+        self.start_simulation(all_data)
+        
     def start_simulation(
         self, all_data: list[dict[str, list[str | Drone] | int]]
     ) -> None:
@@ -59,16 +73,9 @@ class DroneFlowEngine:
             while i >= 0:
                 current_hub = self.__graph.get_hub_by_name(path[i])
                 next_hub = self.__graph.get_hub_by_name(path[i + 1])
-                print(f"222current_hub drones: {current_hub.name} {current_hub.drones}")
-                print(f"222next_hub drones:  {next_hub.name} {next_hub.drones}")
                 self.__graph.move_drones_to_next_hub(path[i], path[i + 1], flow)
-                print(f"333current_hub drones: {current_hub.name} {current_hub.drones}")
-                print(f"333next_hub drones: {next_hub.name} {next_hub.drones}")
-                print("-" * 100)
                 i -= 1
         self.turns_simulation += 1
-        print("Turns now:", self.turns_simulation)
-        print("@" * 100, "\n")
 
     def edmonds_karp(self) -> list[dict[str, list[str], int]]:
         all_paths = list()
@@ -121,14 +128,10 @@ class DroneFlowEngine:
                 if type_of_zone and type_of_zone.value == 4:
                     continue
                 elif neighbor not in self.visited:
-
-                    # for checking edmonds karp could be delete it
                     connection = self.__graph.get_connection_by_names(current, neighbor)
                     next_hub = self.__graph.get_hub_by_name(neighbor)
                     if (connection and connection.available_drones < 1) or (next_hub and next_hub.available_drones < 1):
                         continue
-                    #  finish here!!
-
                     self.visited.append(neighbor)
                     new_path = list(path)
                     new_path.append(neighbor)

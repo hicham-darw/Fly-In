@@ -1,4 +1,3 @@
-from sys import exit
 import re
 from src.Exceptions.ParsingError import ParsingError
 from src.Zone.Zone import Hub, Connection
@@ -17,7 +16,6 @@ class Parser:
 
         Args:
             filename: Path to the input map file to parse.
-
         Returns:
             None
         """
@@ -29,14 +27,32 @@ class Parser:
         self.connections = list()
         self.first_line = 1
         self.name_zones = list()
- 
+
+    def parse(self) -> dict[str, list[Hub] | Hub | int | list[Connection]]:
+        """ parse content file and return dictionary of data
+
+        Args:
+            None
+        Returns:
+            Dictionary: parsed data (nb_drones - hubs - connection)
+        """
+        try:
+            self.parse_content_file()
+            return self.get_parsed_data()
+        except ParsingError as e:
+            print(e)
+        except FileNotFoundError:
+            print("Error: file not found!.")
+        except PermissionError:
+            print("Error: file not permitted!.")
+        return None
+
     # getters
     def get_default_metadata_of_hub(self)-> None:
         """this method return default metadata of hub
 
         Args:
             None
-        
         Returns:
             None
         """
@@ -51,7 +67,6 @@ class Parser:
 
         Args:
             None
-        
         Returns:
             None
         """
@@ -64,11 +79,9 @@ class Parser:
 
         Args:
             line: Input line containing the drone count.
-
         Raises:
             ParsingError: If the line does not match the expected syntax or if
                 the value is not strictly positive.
-
         Returns: None
         """
         match = re.match(r"nb_drones: +?(\d+)", line)
@@ -79,70 +92,141 @@ class Parser:
         if self.nb_drones <= 0:
             raise ParsingError("nb_drones")
 
-    def parse_start_hub(self, line: str) -> None:
-        """Parse the start hub definition.
-
-        Args:
-            line: Input line defining the start hub.
-
-        Raises:
-            ParsingError: If the syntax is invalid or the hub name is not
-                unique.
-        Return:
-            None
-        """
-        match = re.match(r"^start_hub: [^ \-]+ -?\d+ -?\d+( \[.+\])?$", line)
+    def parse_hub(self, line: str) -> None:
+        match = re.match(r"^(start_hub|end_hub|hub): [^ \-]+ -?\d+ -?\d+( \[.+\])?$", line)
         if match is None:
-            raise ParsingError("somthing Wrong! please check line start_hub:")
-
+            raise ParsingError("line of hubs Does'nt match syntax of hubs.")
+        
         start_bracket = line.find('[')
-        if start_bracket >= 0:
+        if start_bracket != -1:
             metadata = self.parse_metadata_of_hub(line[start_bracket:])
-            line_without_meta = line[:start_bracket]
+            line_without_bracket = line[:start_bracket].rstrip()
         else:
             metadata = self.get_default_metadata_of_hub()
-            line_without_meta = line
-        data_of_hub = line_without_meta.split()
+            line_without_bracket = line.rstrip()
+        
+        data_of_hub = line_without_bracket.split()
         self.create_new_hub(
             type_zone=data_of_hub[0][:-1],
             name=data_of_hub[1],
             x=int(data_of_hub[2]),
             y=int(data_of_hub[3]),
-            metadata=metadata,
+            metadata=metadata
         )
-        self.create_drones_inside_start_hub()
 
-    def parse_end_hub(self, line: str) -> None:
-        """Parse the end hub definition.
+    def parse_metadata_of_hub(self, data: str) -> dict[str, int | str | TypeZone]:
+        """Parse hub metadata from a bracketed block.
 
         Args:
-            line: Input line defining the end hub.
-
+            data: Raw metadata string including the surrounding brackets.
         Raises:
-            ParsingError: If the syntax is invalid or the hub name is not
-                unique.
-        Return:
+            ParsingError: If metadata syntax or values are invalid.
+        Returns:
+            A dictionary containing parsed metadata values.
+        """
+        metadata = self.get_default_metadata_of_hub()
+        
+        data = data[1:-1]
+
+        if len(data.split()) > 3:
+            raise ParsingError("metadata contains 3 pairs at most.")
+        
+        for pairs in data.split():
+            key_val_data = pairs.split('=')
+            metadata = self.parse_each_pair_in_metadata_of_hub(key_val_data, metadata)
+
+        return metadata
+
+    def parse_each_pair_in_metadata_of_hub(
+        self, key_val_data: list[str], metadata: dict[str, str | TypeZone | int | None]
+    ) -> dict[str, str | TypeZone | int | None]:
+        """method parse each pair in metadata otherwise raise an exception (parsing)
+
+        Args:
+            key_val_data: list[str]: list contain key and value only
+            metadata: dict: contains default values of metadata
+        Raises:
+            ParsingError: If the data is invalid
+        Returns:
+            updated metadata if valid metadata
+        """        
+        if len(key_val_data) != 2:
+            raise ParsingError("Hub metadata {key}={value}")
+        
+        if key_val_data[0].lower() not in [elem.name for elem in MetaDataOfHub]:
+            raise ParsingError("Hub metadata invalid key.")
+        
+        if key_val_data[0].lower() == MetaDataOfHub.zone.name and key_val_data[1] in [e.name for e in TypeZone]:
+            metadata[MetaDataOfHub.zone.name] = TypeZone[key_val_data[1]]
+        elif key_val_data[0].lower() == MetaDataOfHub.color.name and key_val_data[1].isalpha():
+            metadata[MetaDataOfHub.color.name] = key_val_data[1].lower()
+        elif key_val_data[0].lower() == MetaDataOfHub.max_drones.name:
+            metadata[MetaDataOfHub.max_drones.name] = int(key_val_data[1])
+        else:
+            raise ParsingError("metadata of zones [zone, color, max_drones].")
+        
+        if metadata[MetaDataOfHub.max_drones.name] < 0:
+            raise ParsingError("metadata max_drones must be greather than Zero.")
+        return metadata
+
+    def parse_connection(self, line: str) -> None:
+        """Parse a connection definition.
+
+        Args:
+            line: Input line defining a connection between two hubs.
+        Raises:
+            ParsingError: If the syntax is invalid, if a referenced hub does
+                not exist, or if the connection is malformed.
+        Returns:
             None
         """
-        match = re.match(r"^end_hub: [^ \-]+ -?\d+ -?\d+( \[.+\])?", line)
+        match = re.match(r"^connection: [^ \-]+-[^ \-]+( \[.+\])?", line)
         if match is None:
-            raise ParsingError("end_hub doesn't isupport syntax, please check line end_hub")
+            raise ParsingError("end_hub doesn't support syntax")
+        metadata = self.get_default_metadata_of_connection()
 
-
-        metadata = self.get_default_metadata_of_hub()
         start_bracket = line.find('[')
         if start_bracket > -1:
-            metadata = self.parse_metadata_of_hub(line[start_bracket:])
-            line = line[:start_bracket].strip()
+            metadata = self.parse_metadata_of_connection(line[start_bracket:])
+            line = line[:start_bracket]
 
-        data_of_hub = line.split()
-        self.create_new_hub(
-            type_zone=data_of_hub[0][:-1],
-            name=data_of_hub[1],
-            x=int(data_of_hub[2]),
-            y=int(data_of_hub[3]),
-            metadata=metadata,
+        splitted = line.split()
+        if len(splitted) != 2:
+            raise ParsingError("metadata contains invalid data")
+
+        names_hub = self.is_valid_names_in_connection(splitted[1])
+        new_conn = Connection(
+            names_hub[0],
+            names_hub[1],
+            metadata
         )
+        new_conn.available_drones = new_conn.metadata[MetaDataOfConnection.max_link_capacity.name]
+        self.connections.append(new_conn)
+
+    def parse_metadata_of_connection(self, data: str) -> dict[str, int]:
+        """Parse connection metadata from a bracketed block.
+
+        Args:
+            data: Raw metadata string including the surrounding brackets.
+        Returns:
+            A dictionary containing parsed metadata values.
+        Raises:
+            ParsingError: If metadata syntax or values are invalid.
+        """
+        metadata = self.get_default_metadata_of_connection()
+        data = data[1:-1]
+        if len(data.split()) != 1:
+            raise ParsingError("metadata connection must contain 1 argument")
+        pairs = data.split('=')
+        if len(pairs) != 2:
+            raise ParsingError('metadata connection must contain {key}={value}')
+
+        if pairs[0] != MetaDataOfConnection.max_link_capacity.name:
+            raise ParsingError("metadata connection key must be {max_link_capacity}")
+        elif int(pairs[1]) < 0:
+            raise ParsingError("max_link_capacity must be greather than zero.")
+        metadata[MetaDataOfConnection.max_link_capacity.name] =  int(pairs[1])
+        return metadata
 
     def create_new_hub(
         self,
@@ -180,131 +264,6 @@ class Parser:
             new_hub.available_drones = new_hub.metadata[MetaDataOfHub.max_drones.name]
         self.add_name_to_name_zones(new_hub.name)
 
-    def parse_regular_hub(self, line: str) -> None:
-        """Parse a regular hub definition.
-
-        Args:
-            line: Input line defining a regular hub.
-
-        Raises:
-            ParsingError: If the syntax is invalid in hubs.
-
-        Returns:
-            None
-        """
-        match = re.match(r"^hub: [^ \-]+ -?\d+ -?\d+( \[.+\])?", line)
-        if match is None:
-            raise ParsingError("hub doesn't support syntax")
-
-        metadata = self.get_default_metadata_of_hub()
-
-        start_bracket = line.find('[')
-        if start_bracket > -1:
-            metadata = self.parse_metadata_of_hub(line[start_bracket:])
-            line = line[:start_bracket]
-
-        data_of_hub = line.split()
-        self.create_new_hub(
-            type_zone=data_of_hub[0][:-1],
-            name=data_of_hub[1],
-            x=int(data_of_hub[2]),
-            y=int(data_of_hub[3]),
-            metadata=metadata,            
-        )
-
-    def parse_metadata_of_hub(self, data: str) -> dict[str, int | str | TypeZone]:
-        """Parse hub metadata from a bracketed block.
-
-        Args:
-            data: Raw metadata string including the surrounding brackets.
-
-        Returns:
-            A dictionary containing parsed metadata values.
-
-        Raises:
-            ParsingError: If metadata syntax or values are invalid.
-        """
-        metadata = self.get_default_metadata_of_hub()
-        
-        data = data[1:-1]
-
-        if len(data.split()) > 3:
-            raise ParsingError("metadata contains 3 pairs at most.")
-        
-        for pairs in data.split():
-            key_val_data = pairs.split('=')
-            metadata = self.parse_each_pair_in_metadata_of_hub(key_val_data, metadata)
-
-        return metadata
-
-    def parse_each_pair_in_metadata_of_hub(
-        self, key_val_data: list[str], metadata: dict[str, str | TypeZone | int | None]
-    ) -> dict[str, str | TypeZone | int | None]:
-        """method parse each pair in metadata otherwise raise an exception (parsing)
-        Args:
-            key_val_data: list[str]: list contain key and value only
-            metadata: dict: contains default values of metadata
-
-        Raises:
-            ParsingError: If the data is invalid
-
-        Returns:
-            updated metadata if valid metadata
-        """        
-        if len(key_val_data) != 2:
-            raise ParsingError("Hub metadata {key}={value}")
-        
-        if key_val_data[0].lower() not in [elem.name for elem in MetaDataOfHub]:
-            raise ParsingError("Hub metadata invalid key.")
-        
-        if key_val_data[0].lower() == MetaDataOfHub.zone.name and key_val_data[1] in [e.name for e in TypeZone]:
-            metadata[MetaDataOfHub.zone.name] = TypeZone[key_val_data[1]]
-        elif key_val_data[0].lower() == MetaDataOfHub.color.name and key_val_data[1].isalpha():
-            metadata[MetaDataOfHub.color.name] = key_val_data[1].lower()
-        elif key_val_data[0].lower() == MetaDataOfHub.max_drones.name:
-            metadata[MetaDataOfHub.max_drones.name] = int(key_val_data[1])
-        else:
-            raise ParsingError("metadata of zones [zone, color, max_drones].")
-        
-        if metadata[MetaDataOfHub.max_drones.name] < 0:
-            raise ParsingError("metadata max_drones must be greather than Zero.")
-        return metadata
-
-    def parse_connection(self, line: str) -> None:
-        """Parse a connection definition.
-
-        Args:
-            line: Input line defining a connection between two hubs.
-
-        Raises:
-            ParsingError: If the syntax is invalid, if a referenced hub does
-                not exist, or if the connection is malformed.
-        Returns:
-            None
-        """
-        match = re.match(r"^connection: [^ \-]+-[^ \-]+( \[.+\])?", line)
-        if match is None:
-            raise ParsingError("end_hub doesn't support syntax")
-        metadata = self.get_default_metadata_of_connection()
-
-        start_bracket = line.find('[')
-        if start_bracket > -1:
-            metadata = self.parse_metadata_of_connection(line[start_bracket:])
-            line = line[:start_bracket]
-
-        splitted = line.split()
-        if len(splitted) != 2:
-            raise ParsingError("metadata contains invalid data")
-
-        names_hub = self.is_valid_names_in_connection(splitted[1])
-        new_conn = Connection(
-            names_hub[0],
-            names_hub[1],
-            metadata
-        )
-        new_conn.available_drones = new_conn.metadata[MetaDataOfConnection.max_link_capacity.name]
-        self.connections.append(new_conn)
-
     def is_valid_names_in_connection(self, names_hub: str) -> list[str]:
         """validate names in connection if exist name in hubs
             otherwise raise Parsing Error
@@ -313,7 +272,6 @@ class Parser:
             names_hub: str : contain two names separated by dash -
         Raises:
             ParsingError if not a valid data
-        
         Returns:
             return list[str] : list has two names froms hubs
         """
@@ -327,33 +285,6 @@ class Parser:
             raise ParsingError(f"{names[1]} must be a name from hubs")
         return names
 
-    def parse_metadata_of_connection(self, data: str) -> dict[str, int]:
-        """Parse connection metadata from a bracketed block.
-
-        Args:
-            data: Raw metadata string including the surrounding brackets.
-
-        Returns:
-            A dictionary containing parsed metadata values.
-
-        Raises:
-            ParsingError: If metadata syntax or values are invalid.
-        """
-        metadata = self.get_default_metadata_of_connection()
-        data = data[1:-1]
-        if len(data.split()) != 1:
-            raise ParsingError("metadata connection must contain 1 argument")
-        pairs = data.split('=')
-        if len(pairs) != 2:
-            raise ParsingError('metadata connection must contain {key}={value}')
-
-        if pairs[0] != MetaDataOfConnection.max_link_capacity.name:
-            raise ParsingError("metadata connection key must be {max_link_capacity}")
-        elif int(pairs[1]) < 0:
-            raise ParsingError("max_link_capacity must be greather than zero.")
-        metadata[MetaDataOfConnection.max_link_capacity.name] =  int(pairs[1])
-        return metadata
-
     def add_name_to_name_zones(self, new_name: str) -> None:
         """add name to name_zones for each hib has a unique name
         Args:
@@ -366,7 +297,6 @@ class Parser:
         if new_name not in self.name_zones:
             self.name_zones.append(new_name)
             return
-        print("OK!")
         raise ParsingError("name must be a unique name.")
 
     def create_drones_inside_start_hub(self) -> None:
@@ -374,7 +304,6 @@ class Parser:
 
         Args:
             None
-
         Returns:
             None
         """
@@ -399,30 +328,32 @@ class Parser:
             line = line.strip()
         return line
 
-    def is_completed_data(self) -> bool:
+    def is_completed_data(self) -> None:
         """if required data not initialized before or not change flag readline
         Args:
             None
-
         Return:
-            bool: False or True
+            None
         """
-        if self.start_hub is None or self.end_hub is None:
-            return False
-        if not len(self.connections) or self.first_line:
-            return False
-        return True
+        if self.start_hub is None:
+            raise ParsingError("start_hub not Found!, please check your file.")
+        elif self.end_hub is None:
+            raise ParsingError("end_hub not Found!, please check your file.")
+        elif not len(self.connections):
+            raise ParsingError("connections not Found!, 1 connection at least.")
+        elif self.first_line:
+            raise ParsingError("file is empty or has only comments or spaces")
 
-    def parse_content_file(
-        self
-    ) -> dict[str, list[Hub] | Hub | int | list[Connection]]:
+    def parse_content_file(self) -> None:
         """Read and parse the configured input file.
 
+        Args:
+            None
         Raises:
             ParsingError: Internally raised for malformed input before being
                 caught and reported.
         Returns:
-            dictionary: valid data of start_hub - end_hub - hubs - connections 
+            None
         """
         with open(self.filename, "r") as file:
             for line in file:
@@ -432,26 +363,19 @@ class Parser:
                 if line.startswith("nb_drones:") and not self.nb_drones and self.first_line:
                     self.parse_number_of_drones(line)
                     self.first_line = 0
-                elif line.startswith('start_hub:') and self.start_hub is None and not self.first_line:
-                    self.parse_start_hub(line)
-                elif line.startswith('end_hub:') and self.end_hub is None and not self.first_line:
-                    self.parse_end_hub(line)
-                elif line.startswith('hub:') and not self.first_line:
-                    self.parse_regular_hub(line)
+                elif (line.startswith('start_hub') or line.startswith('end_hub') or line.startswith('hub')) and not self.first_line:
+                    self.parse_hub(line)
                 elif line.startswith('connection:') and not self.first_line:
                     self.parse_connection(line)
                 else:
                     raise ParsingError("ParsingError: line starts with different value!")
-        if self.is_completed_data() is False:
-            raise ParsingError
-        return self.get_graph_data()
+        self.is_completed_data()
    
-    def get_graph_data(self) -> dict[str, list[Hub] | Hub | int | list[Connection]]:
+    def get_parsed_data(self) -> dict[str, list[Hub] | Hub | int | list[Connection]]:
         """get all data need for graph like:
             start_hub - end_hub - hubs and connections
         Args:
             None
-
         Returns:
             dictionary: valid data of start_hub - end_hub - hubs - connections
         """
