@@ -1,16 +1,18 @@
 from collections import deque
-from src.Graph.Graph import Graph
 from src.Drone.Drone import Drone
 from src.Enums.Enums import TypeZone
+from src.GraphBuilder.GraphBuilder import GraphBuilder
+from src.Enums.Enums import MetaDataOfHub
+from termcolor import cprint
 
 
 class DroneFlowEngine:
 
-    def __init__(self, graph: Graph) -> None:
+    def __init__(self, graph: GraphBuilder) -> None:
         """Constructor engine of flow drones
 
         Args:
-            graph (Graph): [graph to simulate hubs and connection between them]
+            graph (GraphBuilder): [graph to simulate hubs and connection between them]
             drones (list[Drone]): [drones]
         """
         self.__graph = graph
@@ -28,8 +30,8 @@ class DroneFlowEngine:
         self.__graph.get_start_hub().drones = self.__drones
 
     # getters method ----------------->
-    def get_graph(self) -> Graph:
-        return self.__graph
+    def get_graph(self) -> GraphBuilder:
+        return self.__GraphBuilder
 
     def run(self) -> None:
         """put drones in start_hub and starting simulation
@@ -47,9 +49,6 @@ class DroneFlowEngine:
     def start_simulation(
         self, all_data: list[dict[str, list[str | Drone] | int]]
     ) -> None:
-        if not all_data:
-            print("all_data is empty!");
-            return
 
         while self.__graph.get_end_hub().drones is None or len(self.__graph.get_end_hub().drones) != self.__graph.get_number_of_drones():
             self.simulate_turn(all_data)
@@ -58,11 +57,10 @@ class DroneFlowEngine:
         for index_data in range(len(all_data)):
             path = all_data[index_data]['path']
             flow = all_data[index_data]['flow']
-
+            text_simulation = ''
             # find first move in path simultaneously # check simulate_turn rafcatoring hard here!
             i = 0
             while i < len(path) - 1: 
-                current_hub = self.__graph.get_hub_by_name(path[i])
                 next_hub = self.__graph.get_hub_by_name(path[i + 1])
                 if next_hub.drones is None:
                     break
@@ -71,10 +69,9 @@ class DroneFlowEngine:
                 i -= 1
 
             while i >= 0:
-                current_hub = self.__graph.get_hub_by_name(path[i])
-                next_hub = self.__graph.get_hub_by_name(path[i + 1])
-                self.__graph.move_drones_to_next_hub(path[i], path[i + 1], flow)
+                self.move_drones_to_next_hub(path[i], path[i + 1], flow)
                 i -= 1
+        print()
         self.turns_simulation += 1
 
     def edmonds_karp(self) -> list[dict[str, list[str], int]]:
@@ -198,3 +195,58 @@ class DroneFlowEngine:
             for hub in self.__graph.get_regular_hubs():
                 if name_hub == hub.name:
                     return hub.metadata.get('zone')
+
+    def move_drone_has_restricted_zone(self, current_hub_name: str, next_hub_name: str):
+        current_hub = self.__graph.get_hub_by_name(current_hub_name)
+        next_hub = self.__graph.get_hub_by_name(next_hub_name)
+        conn = self.__graph.get_connection_by_names(current_hub.name, next_hub.name)
+        if conn.drones is None:
+            conn.drones = []
+
+        if len(conn.drones) > 0:
+            if next_hub.drones is None:
+                next_hub.drones = []
+            drone_in_conn = conn.drones.pop(0)
+            next_hub.drones.append(drone_in_conn)
+            text_move = 'D<' + str(drone_in_conn.drone_id) + '>-<' + next_hub.name + '> ' 
+            try:
+                cprint(f"{text_move}", next_hub.metadata.get('color'), end='')
+            except KeyError:
+                cprint(f"{text_move}", "red",end='')
+        if not current_hub.drones:
+            return
+
+        drone = current_hub.drones.pop(0)
+        conn.drones.append(drone)
+        text_move = 'D<' + str(drone.drone_id) + '>-<' + conn.zone1 + '-' + conn.zone2 + '> '
+        cprint(f"{text_move}", end='') 
+
+    def move_drone_has_not_restricted_zone(self, current_hub_name: str, next_hub_name: str):
+        current_hub = self.__graph.get_hub_by_name(current_hub_name)
+        next_hub = self.__graph.get_hub_by_name(next_hub_name)
+
+        if next_hub.drones is None:
+            next_hub.drones = []
+
+        if not current_hub.drones:
+            return
+
+        try:
+            drone = current_hub.drones.pop(0)
+        except IndexError:
+            return
+        next_hub.drones.append(drone)
+        text_move = 'D<' + str(drone.drone_id) + '>-<' + next_hub.name + '> '
+        try:
+            cprint(f"{text_move}", next_hub.metadata.get('color', 'white'), end='')
+        except KeyError:
+            cprint(f"{text_move}", end='')
+
+    def move_drones_to_next_hub(self, current_hub_name: str, next_hub_name: str, flow: int) -> None:
+        next_hub = self.__graph.get_hub_by_name(next_hub_name)
+        while flow:
+            if next_hub.metadata[MetaDataOfHub.zone.name].value == TypeZone.restricted.value:
+                self.move_drone_has_restricted_zone(current_hub_name, next_hub_name)
+            else:
+                self.move_drone_has_not_restricted_zone(current_hub_name, next_hub_name)
+            flow -= 1

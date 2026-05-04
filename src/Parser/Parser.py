@@ -95,7 +95,7 @@ class Parser:
     def parse_hub(self, line: str) -> None:
         match = re.match(r"^(start_hub|end_hub|hub): [^ \-]+ -?\d+ -?\d+( \[.+\])?$", line)
         if match is None:
-            raise ParsingError("line of hubs Does'nt match syntax of hubs.")
+            raise ParsingError("line of hubs Doesn't match syntax of hubs.")
         
         start_bracket = line.find('[')
         if start_bracket != -1:
@@ -239,8 +239,8 @@ class Parser:
         Args:
             type_zone: type of hub start - end or regular hub
             name: name of hub
-            x: coordinates in map
-            y: cooordinates in map
+            x:  x coordinate in map
+            y: y cooordinate in map
             metadata: metadata of hub like color zone type and max_drones
         Returns:
             None

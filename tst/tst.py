@@ -1,11 +1,4 @@
-from enum import Enum
+from termcolor import colored, cprint
 
+print(colored('Red text', 'red'))
 
-class A(Enum):
-    hicham = 1
-    darwin = 2
-
-
-for e in A:
-    print(f"name: {A.hicham}")
-    print(f"value: {e.value}")

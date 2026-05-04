@@ -1,7 +1,6 @@
 from src.Zone.Zone import Hub, Connection
 from typing_extensions import Self
 from src.Enums.Enums import TypeZone, MetaDataOfHub
-from src.Drone.Drone import Drone
 
 
 class GraphBuilder:
@@ -22,8 +21,8 @@ class GraphBuilder:
 
         self.__adjacency_list: dict[str, list[str]] = dict()
     
-    #  setter methods for builder
-    def set_number_of_drones(self, number_of_drones: int) -> Self:
+    #  builder method to build graph
+    def build_number_of_drones(self, number_of_drones: int) -> Self:
         """setter method
             set number of drones
         Args:
@@ -35,7 +34,7 @@ class GraphBuilder:
             self.__nb_drones = number_of_drones
         return self
 
-    def set_start_hub(self, start_hub: Hub) -> Self:
+    def build_start_hub(self, start_hub: Hub) -> Self:
         """setter method set start_hub
 
         Args:
@@ -48,7 +47,7 @@ class GraphBuilder:
             self.__start_hub = start_hub
         return self
 
-    def set_end_hub(self, end_hub: Hub) -> Self:
+    def build_end_hub(self, end_hub: Hub) -> Self:
         """setter method set end_hub
 
         Args:
@@ -61,7 +60,7 @@ class GraphBuilder:
             self.__end_hub = end_hub
         return self
 
-    def set_hubs(self, hubs: list[Hub]) -> Self:
+    def build_hubs(self, hubs: list[Hub]) -> Self:
         """ setter method
             set new hubs to graph
 
@@ -75,7 +74,7 @@ class GraphBuilder:
             self.__hubs.append(hub)
         return self
 
-    def set_connections(self, connections: list[Connection]) -> Self:
+    def build_connections(self, connections: list[Connection]) -> Self:
         """ setter method
             set new_connections
         Args:
@@ -87,7 +86,7 @@ class GraphBuilder:
         self.__connections = connections
         return self
 
-    def set_adjacency_list(self) -> Self:
+    def build_adjacency_list(self) -> Self:
         """set an adjacency list nodes and edges.
 
         Args:
@@ -293,55 +292,22 @@ class GraphBuilder:
         return flow
 
     def build(self, graph_data: dict[str, list[Hub] | Hub | int | list[Connection]]) -> None:
-        self.set_number_of_drones(graph_data.get('nb_drones'))\
-        .set_start_hub(graph_data.get('start_hub'))\
-        .set_end_hub(graph_data.get('end_hub'))\
-        .set_hubs(graph_data.get('hubs'))\
-        .set_connections(graph_data.get('connections')).set_adjacency_list()
-
-    # update data
-    def move_drone_has_restricted_zone(self, current_hub_name: str, next_hub_name: str):
-        current_hub = self.get_hub_by_name(current_hub_name)
-        next_hub = self.get_hub_by_name(next_hub_name)
-        conn = self.get_connection_by_names(current_hub.name, next_hub.name)
-        if conn.drones is None:
-            conn.drones = []
-
-        if len(conn.drones) > 0:
-            if next_hub.drones is None:
-                next_hub.drones = []
-
-            drone_in_conn = conn.drones.pop(0)
-            next_hub.drones.append(drone_in_conn)                    
-
-        if not current_hub.drones:
-            return
-
-        drone = current_hub.drones.pop(0)
-        conn.drones.append(drone)
-    
-    def move_drone_has_not_restricted_zone(self, current_hub_name: str, next_hub_name: str):
-        current_hub = self.get_hub_by_name(current_hub_name)
-        next_hub = self.get_hub_by_name(next_hub_name)
-
-        if next_hub.drones is None:
-            next_hub.drones = []
-
-        if not current_hub.drones:
-            return
-
-        try:
-            drone = current_hub.drones.pop(0)
-        except IndexError:
-            return
-        next_hub.drones.append(drone)
-
-    def move_drones_to_next_hub(self, current_hub_name: str, next_hub_name: str, flow: int) -> None:
-        current_hub = self.get_hub_by_name(current_hub_name)
-        next_hub = self.get_hub_by_name(next_hub_name)
-        while flow:
-            if next_hub.metadata[MetaDataOfHub.zone.name].value == TypeZone.restricted.value:
-                self.move_drone_has_restricted_zone(current_hub_name, next_hub_name)
-            else:
-                self.move_drone_has_not_restricted_zone(current_hub_name, next_hub_name)
-            flow -= 1
+        """build my graph object step by step
+        Args:
+            dictionary (dict): all_parsed_data from parser
+            nb_drones: int: number of drones
+            start_hub: Hub: start all drones
+            end_hub: Hub: all drones target this hub
+            hubs: list[hub]: hubs between start and end can has no \
+                    connection between other hubs
+            connections: list[Connection]: edges between two hubs
+        
+        Returns:
+            None
+        """
+        self.build_number_of_drones(graph_data.get('nb_drones'))\
+        .build_start_hub(graph_data.get('start_hub'))\
+        .build_end_hub(graph_data.get('end_hub'))\
+        .build_hubs(graph_data.get('hubs'))\
+        .build_connections(graph_data.get('connections'))\
+        .build_adjacency_list()

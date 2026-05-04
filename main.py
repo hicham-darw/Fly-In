@@ -1,24 +1,20 @@
 import sys
 from src.Parser.Parser import Parser
-from src.Graph.Graph import Graph
-from src.Enums.Enums import TypeZone
-#///////////////////////////////////////
 from src.GraphBuilder.GraphBuilder import GraphBuilder
 from src.DroneFlowEngine.DroneFlowEngine import DroneFlowEngine
-from src.Exceptions.ParsingError import ParsingError
 
 if __name__ == '__main__':
 
     #  check argument.........!
     if len(sys.argv) != 2:
-        print("need file!")
-        sys.exit(0)
+        print("Usage: python3 main.py <path to file>.")
+        sys.exit(42)
     
     #  parse file....
     parser = Parser(sys.argv[1])
     graph_data = parser.parse()
     if graph_data is None:
-        sys.exit(0)
+        sys.exit(42)
 
     #  graph builder here....!
     graph_builder = GraphBuilder()
