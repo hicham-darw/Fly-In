@@ -200,7 +200,7 @@ class Parser:
             names_hub[1],
             metadata
         )
-        new_conn.available_drones = new_conn.metadata[MetaDataOfConnection.max_link_capacity.name]
+        # new_conn.available_drones = new_conn.metadata[MetaDataOfConnection.max_link_capacity.name]
         self.connections.append(new_conn)
 
     def parse_metadata_of_connection(self, data: str) -> dict[str, int]:
@@ -255,13 +255,13 @@ class Parser:
 
         if type_zone == "start_hub":
             self.start_hub = new_hub
-            self.start_hub.available_drones = self.nb_drones
+            # self.start_hub.available_drones = self.nb_drones
         elif type_zone == 'end_hub':
             self.end_hub = new_hub
-            self.end_hub.available_drones = self.nb_drones
+            # self.end_hub.available_drones = self.nb_drones
         else:
             self.hubs.append(new_hub)
-            new_hub.available_drones = new_hub.metadata[MetaDataOfHub.max_drones.name]
+            # new_hub.available_drones = new_hub.metadata[MetaDataOfHub.max_drones.name]
         self.add_name_to_name_zones(new_hub.name)
 
     def is_valid_names_in_connection(self, names_hub: str) -> list[str]:

@@ -13,26 +13,11 @@ class GraphBuilder:
         Returns:
             None
         """
-        self.__nb_drones: int = 0
         self.__start_hub: Hub = None
         self.__hubs: list[Hub]= []
         self.__end_hub: Hub = None
         self.__connections: list[Connection] = list()
-
         self.__adjacency_list: dict[str, list[str]] = dict()
-    
-    #  builder method to build graph
-    def build_number_of_drones(self, number_of_drones: int) -> Self:
-        """setter method
-            set number of drones
-        Args:
-            number_of_drones: [number of drones can fly to end_hub]
-        Return:
-            self: Self same object
-        """
-        if self.__nb_drones == 0:
-            self.__nb_drones = number_of_drones
-        return self
 
     def build_start_hub(self, start_hub: Hub) -> Self:
         """setter method set start_hub
@@ -136,18 +121,6 @@ class GraphBuilder:
                 return index
 
         return len(lst)
-
-    
-    def get_number_of_drones(self) -> int:
-        """get number of drones
-        
-        Args:
-            None
-        
-        Returns:
-            int: number of drones
-        """
-        return self.__nb_drones
     
     def get_adjacency_list(self) -> dict[str, list[str]]:
         """get adjacency list of graph
@@ -240,6 +213,17 @@ class GraphBuilder:
                 return conn
         return None
 
+    def get_graph(self) -> Self:
+        """ this return self thi obj of graph
+
+        Args:
+            None
+
+        Return:
+            None
+        """
+        return self
+
     def get_flow_connection(self, current_hub: str, next_hub: str) -> int:
         """getter method
             get_flow connection between two hubs
@@ -250,46 +234,31 @@ class GraphBuilder:
         Returns:
             int: [flow between them or -1 if not find connection]
         """
-        for current, neighbors in self.__adjacency_list.items():
-            for neighbor in neighbors:
-                if current == current_hub and neighbor == next_hub:
-                    conn = self.get_connections() 
-        for conn in self.__connections:
+        for conn in self.get_connections():
             if conn.zone1 == current_hub and conn.zone2 == next_hub:
                 return conn.available_drones
             elif conn.zone2 == current_hub and conn.zone1 == next_hub:
                 return conn.available_drones
         return -1
 
-    def get_max_flow(self, path_to_exit: list[str]) -> int:
-        """Return the minimum flow along a path to the exit.
+    def get_type_of_zone(self, name_hub: str) -> TypeZone:
+        """Return the zone type associated with a hub name.
 
         Args:
-            path_to_exit: The path whose flow should be evaluated.
+            name_hub: The name of the hub.
 
         Returns:
-            The minimum flow value found on the path.
+            The zone type associated with the hub.
         """
-        flow = 0
-        for i in range(len(path_to_exit) - 1):
-            
-            flow_conn = self.get_flow_connection(path_to_exit[i], path_to_exit[i + 1])
-            flow_hub = self.get_hub_by_name(path_to_exit[i + 1]).available_drones
-
-            if flow_conn is None or flow_hub is None:
-                break
-
-            if flow_hub < flow_conn:
-                if i == 0:
-                    flow = flow_hub
-                elif flow > flow_hub:
-                    flow = flow_hub
-            else:
-                if i == 0:
-                    flow = flow_conn
-                elif flow > flow_conn:
-                    flow = flow_conn
-        return flow
+        if self.get_start_hub() and name_hub == self.get_start_hub().name:
+            return self.get_start_hub().metadata.get('zone')
+        
+        if self.get_end_hub() and name_hub == self.get_end_hub().name:
+            return self.get_end_hub().metadata.get('zone')
+        else:
+            for hub in self.get_regular_hubs():
+                if name_hub == hub.name:
+                    return hub.metadata.get('zone')
 
     def build(self, graph_data: dict[str, list[Hub] | Hub | int | list[Connection]]) -> None:
         """build my graph object step by step
@@ -305,8 +274,7 @@ class GraphBuilder:
         Returns:
             None
         """
-        self.build_number_of_drones(graph_data.get('nb_drones'))\
-        .build_start_hub(graph_data.get('start_hub'))\
+        self.build_start_hub(graph_data.get('start_hub'))\
         .build_end_hub(graph_data.get('end_hub'))\
         .build_hubs(graph_data.get('hubs'))\
         .build_connections(graph_data.get('connections'))\

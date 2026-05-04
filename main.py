@@ -2,6 +2,7 @@ import sys
 from src.Parser.Parser import Parser
 from src.GraphBuilder.GraphBuilder import GraphBuilder
 from src.DroneFlowEngine.DroneFlowEngine import DroneFlowEngine
+from src.EdmondsKarpAlgo.EdmondsKarpAlgo import EdmondsKarpAlgo
 
 if __name__ == '__main__':
 
@@ -21,6 +22,6 @@ if __name__ == '__main__':
     graph_builder.build(graph_data)
 
     #  starting simulation here.....!
-    flow_engine = DroneFlowEngine(graph_builder)
+    flow_engine = DroneFlowEngine(graph_builder, EdmondsKarpAlgo(graph_builder), graph_data['nb_drones'])
     flow_engine.run()
     print("number of turns:", flow_engine.turns_simulation)
