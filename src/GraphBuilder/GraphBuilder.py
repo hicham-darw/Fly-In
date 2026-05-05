@@ -1,6 +1,6 @@
 from src.Zone.Zone import Hub, Connection
 from typing_extensions import Self
-from src.Enums.Enums import TypeZone, MetaDataOfHub
+from src.Enums.Enums import TypeZone
 
 
 class GraphBuilder:
@@ -213,17 +213,6 @@ class GraphBuilder:
                 return conn
         return None
 
-    def get_graph(self) -> Self:
-        """ this return self thi obj of graph
-
-        Args:
-            None
-
-        Return:
-            None
-        """
-        return self
-
     def get_flow_connection(self, current_hub: str, next_hub: str) -> int:
         """getter method
             get_flow connection between two hubs
@@ -260,7 +249,10 @@ class GraphBuilder:
                 if name_hub == hub.name:
                     return hub.metadata.get('zone')
 
-    def build(self, graph_data: dict[str, list[Hub] | Hub | int | list[Connection]]) -> None:
+    def build(
+        self,
+        graph_data: dict[str, list[Hub] | Hub | int | list[Connection]]
+    ) -> None:
         """build my graph object step by step
         Args:
             dictionary (dict): all_parsed_data from parser

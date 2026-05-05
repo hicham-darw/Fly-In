@@ -21,7 +21,9 @@ if __name__ == '__main__':
     graph_builder = GraphBuilder()
     graph_builder.build(graph_data)
 
-    #  starting simulation here.....!
-    flow_engine = DroneFlowEngine(graph_builder, EdmondsKarpAlgo(graph_builder), graph_data['nb_drones'])
+    #  starting simulation here.....! graph_data nb_drones create drones first....
+    flow_engine = DroneFlowEngine(graph_builder, EdmondsKarpAlgo(graph_builder))
+    flow_engine.create_drones(graph_data['nb_drones'])
+    flow_engine.set_drones_in_start_hub()
     flow_engine.run()
     print("number of turns:", flow_engine.turns_simulation)
