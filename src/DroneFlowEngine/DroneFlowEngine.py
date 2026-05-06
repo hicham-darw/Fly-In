@@ -3,7 +3,6 @@ from src.Enums.Enums import TypeZone
 from src.GraphBuilder.GraphBuilder import GraphBuilder
 from src.Enums.Enums import MetaDataOfHub
 from src.EdmondsKarpAlgo.EdmondsKarpAlgo import EdmondsKarpAlgo
-from termcolor import cprint
 
 
 class DroneFlowEngine:
@@ -149,18 +148,16 @@ class DroneFlowEngine:
                 next_hub.drones = []
             drone_in_conn = conn.drones.pop(0)
             next_hub.drones.append(drone_in_conn)
-            text_move = 'D<' + str(drone_in_conn.get_drone_id()) + '>-<' + next_hub.name + '> ' 
-            try:
-                cprint(f"{text_move}", next_hub.metadata.get('color'), end='')
-            except KeyError:
-                cprint(f"{text_move}", "red",end='')
+            text_move = 'D' + str(drone_in_conn.get_drone_id()) + '-' + next_hub.name + ' ' 
+            print(f"{text_move}", end='')
+
         if not current_hub.drones:
             return
 
         drone = current_hub.drones.pop(0)
         conn.drones.append(drone)
-        text_move = 'D<' + str(drone.get_drone_id()) + '>-<' + conn.zone1 + '-' + conn.zone2 + '> '
-        cprint(f"{text_move}", end='') 
+        text_move = 'D' + str(drone.get_drone_id()) + '-' + conn.zone1 + '-' + conn.zone2 + ' '
+        print(f"{text_move}", end='') 
 
     def move_drone_has_not_restricted_zone(self, current_hub_name: str, next_hub_name: str) -> None:
         """move drones is normal or preferred zone is only move drones  to next hub
@@ -187,11 +184,8 @@ class DroneFlowEngine:
         except IndexError:
             return
         next_hub.drones.append(drone)
-        text_move = 'D<' + str(drone.get_drone_id()) + '>-<' + next_hub.name + '> '
-        try:
-            cprint(f"{text_move}", next_hub.metadata.get('color', 'white'), end='')
-        except KeyError:
-            cprint(f"{text_move}", end='')
+        text_move = 'D' + str(drone.get_drone_id()) + '-' + next_hub.name + ' '
+        print(f"{text_move}", end='')
 
     def move_drones_to_next_hub(self, current_hub_name: str, next_hub_name: str, flow: int) -> None:
         """like manager count how many drones can fly to next hub
