@@ -149,7 +149,8 @@ class DroneFlowEngine:
                 self.move_drones_to_next_hub(path[i], path[i + 1], flow)
                 i -= 1
         sleep(0.8)
-        print("\033[1J\033[1H", end='')
+        print()
+        # print("\033[1H", end='')
         self.turns_simulation += 1
 
     def move_drone_has_restricted_zone(self, current_hub_name: str, next_hub_name: str) -> None:
@@ -203,7 +204,7 @@ class DroneFlowEngine:
         for c in move_action:
             print(c, end='', flush=True)
             sleep(0.008)
-        print('\033[0m \033[25m', end='', flush=True)            
+        print('\033[0m\033[25m', end='', flush=True)            
 
     def move_drone_has_not_restricted_zone(self, current_hub_name: str, next_hub_name: str) -> None:
         """move drones is normal or preferred zone is only move drones  to next hub
