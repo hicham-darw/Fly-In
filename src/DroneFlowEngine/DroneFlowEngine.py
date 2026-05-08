@@ -1,15 +1,20 @@
+import sys
 from src.Drone.Drone import Drone
 from src.Enums.Enums import TypeZone
 from src.GraphBuilder.GraphBuilder import GraphBuilder
 from src.Enums.Enums import MetaDataOfHub
-from src.EdmondsKarpAlgo.EdmondsKarpAlgo import EdmondsKarpAlgo
-
+from src.Algorithms.EdmondsKarpAlgo import EdmondsKarpAlgo
+from src.Color.Color import ColorsRGB
+from src.Algorithms.Algo import Algo
+from time import sleep
+import webcolors
+from src.Parser.Parser import Parser
 
 class DroneFlowEngine:
     """engine of simulation made drones can traverse between hubs
     and track each one to reach goal
     """
-    def __init__(self, graph: GraphBuilder, algo: EdmondsKarpAlgo) -> None:
+    def __init__(self) -> None:
         """Constructor engine of flow drones
 
         Args:
@@ -18,21 +23,40 @@ class DroneFlowEngine:
         Return:
             None
         """
-        self.__graph = graph
-        self.__algo = algo
+        self.__parsed_data = None
+        self.__algo = None
+
+        self.__graph = None
         self.__drones: list[Drone] = []
 
         self.turns_simulation = 0
-        self.visited = []
+
+    def init_algo(self) -> None:
+        self.__algo = EdmondsKarpAlgo(self.__graph)
+
+    def parse_file(self) -> None:
+        self.__parser = Parser(sys.argv[1])
+        self.__parser.parse()
+        self.__parsed_data = self.__parser.get_parsed_data()
+
+    def init_graph(self) -> None:
+        graph_builder = GraphBuilder()
+        graph_builder.build_start_hub(self.__parsed_data.get('start_hub'))\
+        .build_end_hub(self.__parsed_data.get('end_hub'))\
+        .build_hubs(self.__parsed_data.get('hubs'))\
+        .build_connections(self.__parsed_data.get('connections'))\
+        .build_adjacency_list()
+        
+        self.__graph = graph_builder
     
-    def create_drones(self, number_of_drones: int) -> None:
+    def create_drones(self) -> None:
         """create Drones to simulate fly-in
         Args:
             number_of_drones: (int): number_of_drones
         None:
             None
         """
-        for i in range(number_of_drones):
+        for i in range(self.__parsed_data['nb_drones']):
             self.__drones.append(Drone(i + 1))
 
     # setter method
@@ -61,7 +85,7 @@ class DroneFlowEngine:
         """
         return self.__nb_drones
 
-    def run(self) -> None:
+    def execute_simulation(self) -> None:
         """put drones in start_hub and starting simulation
 
         Args:
@@ -70,8 +94,8 @@ class DroneFlowEngine:
             None
         """
         self.set_drones_in_start_hub()
-        self.__algo.reset_capacities()
-        all_data = self.__algo.edmonds_karp()
+        self.__graph.reset_capacities()
+        all_data = self.__algo.run()
         for d in all_data:
             print(d)
         self.start_simulation(all_data)
@@ -124,7 +148,8 @@ class DroneFlowEngine:
             while i >= 0:
                 self.move_drones_to_next_hub(path[i], path[i + 1], flow)
                 i -= 1
-        print()
+        sleep(0.8)
+        print("\033[1J\033[1H", end='')
         self.turns_simulation += 1
 
     def move_drone_has_restricted_zone(self, current_hub_name: str, next_hub_name: str) -> None:
@@ -147,17 +172,38 @@ class DroneFlowEngine:
             if next_hub.drones is None:
                 next_hub.drones = []
             drone_in_conn = conn.drones.pop(0)
-            next_hub.drones.append(drone_in_conn)
-            text_move = 'D' + str(drone_in_conn.get_drone_id()) + '-' + next_hub.name + ' ' 
-            print(f"{text_move}", end='')
-
+            if drone_in_conn.can_move_to_next_hub() is True:
+                next_hub.drones.append(drone_in_conn)
+                text_move = 'D' + str(drone_in_conn.get_drone_id()) + '-' + next_hub.name + ' ' 
+                self.colored_print(text_move, next_hub.metadata['color'])        
+                if next_hub == self.__graph.get_end_hub():
+                    drone_in_conn.set_cant_move()
+    
         if not current_hub.drones:
             return
 
         drone = current_hub.drones.pop(0)
-        conn.drones.append(drone)
-        text_move = 'D' + str(drone.get_drone_id()) + '-' + conn.zone1 + '-' + conn.zone2 + ' '
-        print(f"{text_move}", end='') 
+        if drone.can_move_to_next_hub() is True:
+            conn.drones.append(drone)
+            text_move = 'D' + str(drone.get_drone_id()) + '-' + conn.zone1 + '-' + conn.zone2 + ' '
+            self.colored_print(text_move, "white", "connection")
+
+    def colored_print(self, move_action: str, color: str, connection=None) -> None:
+            
+        if color is None:
+            color = 'white'
+        try:
+            rgb = webcolors.name_to_rgb(color.lower())
+        except ValueError as e:
+            rgb = webcolors.name_to_rgb('white')
+        colored = '\033[38;2;' + str(rgb.red) + ';' + str(rgb.green) + ';' + str(rgb.blue) + 'm' 
+        if connection is not None:
+            colored += " \033[5m"
+        print(colored, end='', flush=True)
+        for c in move_action:
+            print(c, end='', flush=True)
+            sleep(0.008)
+        print('\033[0m \033[25m', end='', flush=True)            
 
     def move_drone_has_not_restricted_zone(self, current_hub_name: str, next_hub_name: str) -> None:
         """move drones is normal or preferred zone is only move drones  to next hub
@@ -183,9 +229,12 @@ class DroneFlowEngine:
             drone = current_hub.drones.pop(0)
         except IndexError:
             return
-        next_hub.drones.append(drone)
-        text_move = 'D' + str(drone.get_drone_id()) + '-' + next_hub.name + ' '
-        print(f"{text_move}", end='')
+        if drone.can_move_to_next_hub() is True:
+            next_hub.drones.append(drone)
+            text_move = 'D' + str(drone.get_drone_id()) + '-' + next_hub.name + ' '
+            self.colored_print(text_move, next_hub.metadata['color'])
+            if next_hub == self.__graph.get_end_hub():
+                drone.set_cant_move()
 
     def move_drones_to_next_hub(self, current_hub_name: str, next_hub_name: str, flow: int) -> None:
         """like manager count how many drones can fly to next hub

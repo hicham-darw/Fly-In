@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Theme(Enum):
+class ColorsRGB(Enum):
 
     RESET = "\033[0m"
 

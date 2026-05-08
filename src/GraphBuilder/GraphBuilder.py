@@ -213,23 +213,6 @@ class GraphBuilder:
                 return conn
         return None
 
-    def get_flow_connection(self, current_hub: str, next_hub: str) -> int:
-        """getter method
-            get_flow connection between two hubs
-        Args:
-            current_hub (str): [name of current hub]
-            next_hub (str): [name of next hub]
-
-        Returns:
-            int: [flow between them or -1 if not find connection]
-        """
-        for conn in self.get_connections():
-            if conn.zone1 == current_hub and conn.zone2 == next_hub:
-                return conn.available_drones
-            elif conn.zone2 == current_hub and conn.zone1 == next_hub:
-                return conn.available_drones
-        return -1
-
     def get_type_of_zone(self, name_hub: str) -> TypeZone:
         """Return the zone type associated with a hub name.
 
@@ -271,3 +254,85 @@ class GraphBuilder:
         .build_hubs(graph_data.get('hubs'))\
         .build_connections(graph_data.get('connections'))\
         .build_adjacency_list()
+
+    # getters method
+    def get_flow_connection(self, current_hub: str, next_hub: str) -> int:
+        """getter method
+            get_flow connection between two hubs
+        Args:
+            current_hub (str): [name of current hub]
+            next_hub (str): [name of next hub]
+
+        Returns:
+            int: [flow between them or -1 if not find connection]
+        """
+        for conn in self.get_connections():
+            if conn.zone1 == current_hub and conn.zone2 == next_hub:
+                return conn.available_drones
+            elif conn.zone2 == current_hub and conn.zone1 == next_hub:
+                return conn.available_drones
+        return -1
+
+    def reset_capacities(self) -> None:
+        """reset_capacities graph to run algo
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        self.reset_start_hub()
+        self.reset_end_hub()
+        self.reset_regular_hubs()
+        self.reset_connections()
+    
+    def reset_start_hub(self) -> None:
+        """reset start_hub capacity
+
+        Args:
+            None
+        
+        Returns:
+            None
+        """
+        start_hub = self.get_start_hub()
+        start_hub.available_drones = start_hub.metadata['max_drones']
+    
+    def reset_end_hub(self) -> None:
+        """Reset end_hub capacity
+
+        Args:
+            None
+        
+        Returns:
+            None
+        """
+        end_hub = self.get_end_hub()
+        end_hub.available_drones = end_hub.metadata['max_drones']
+    
+    def reset_regular_hubs(self) -> None:
+        """resert regular hubs capacities
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
+        for hub in self.get_regular_hubs():
+            hub.available_drones = hub.metadata['max_drones']
+    
+    def reset_connections(self) -> None:
+        """reste connections capacities
+
+        Args:
+            None
+        
+        Returns:
+            None
+        """
+        for conn in self.get_connections():
+            conn.available_drones = conn.metadata['max_link_capacity']
+
+    
