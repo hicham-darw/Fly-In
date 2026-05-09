@@ -47,12 +47,12 @@ class Parser:
         except ParsingError as e:
             print(e)
         except FileNotFoundError:
-            print("Error: file not found!.")
+            print(f"Error: {self.filename} not found!.")
         except PermissionError:
-            print("Error: file not permitted!.")
+            print(f"Error: {self.filename} not permitted!.")
         except IsADirectoryError:
             print(f"Error: {self.filename} is a directory!.")
-        return None
+        exit(42)
 
     # getters
     def get_default_metadata_of_hub(self) -> HubMetadata:
@@ -104,8 +104,7 @@ class Parser:
         """
         match = re.match(r"^(start_hub|end_hub|hub): [^ \-]+ -?\d+ -?\d+( \[.+\])?$", line)
         if match is None:
-            err_line = line[:line.find(':')] if line.find(":") != -1 else line
-            raise ParsingError(f"({err_line}) Doesn't match syntax of hubs.")
+            raise ParsingError(f"line: {line} Doesn't match syntax of hubs.")
         
         start_bracket = line.find('[')
         if start_bracket != -1:
@@ -199,7 +198,7 @@ class Parser:
         """
         match = re.match(r"^connection: [^ \-]+-[^ \-]+( \[.+\])?", line)
         if match is None:
-            raise ParsingError("end_hub doesn't support syntax")
+            raise ParsingError(f"line: {line} Doesn't match syntax of connections.")
         
         metadata = self.get_default_metadata_of_connection()
         start_bracket = line.find('[')
@@ -287,6 +286,11 @@ class Parser:
         names = names_hub.split('-')
         if len(names) != 2:
             raise ParsingError("must be two hubs name in 1 connection")
+        for conn in self.connections:
+            if conn.zone1 == names[0] and conn.zone2 == names[1]:
+                raise ParsingError("connection must not appear more than once.")
+            elif conn.zone2 == names[0] and conn.zone1 == names[1]:
+                raise ParsingError("connection must not appear more than once.")
 
         if names[0] not in [self.start_hub.name] + [self.end_hub.name] + [hub.name for hub in self.hubs]:
             raise ParsingError(f"{names[0]} must be a name from hubs")
@@ -319,10 +323,9 @@ class Parser:
             line: filter line and return it
         """
         if line.find('#') != -1:
-            line = line[:line.find('#')].strip()
+            return line[:line.find('#')].strip()
         else:
-            line = line.strip()
-        return line
+            return line.strip()
 
     def is_completed_data(self) -> None:
         """if required data not initialized before or not change flag readline
@@ -334,13 +337,19 @@ class Parser:
         Return:
             None
         """
-        if self.start_hub is None:
-            raise ParsingError("start_hub not Found!, please check your file.")
-        elif self.end_hub is None:
-            raise ParsingError("end_hub not Found!, please check your file.")
-        elif not len(self.connections):
-            raise ParsingError("connections not Found!, 1 connection at least.")
-        elif self.first_line:
+        try:
+            if self.start_hub is None:
+                raise ParsingError("start_hub not Found!, please check your file.")
+        except AttributeError:
+            print("start_hub not found in map.")
+            exit(42)
+        try:
+            if self.end_hub is None:
+                raise ParsingError("end_hub not Found!, please check your file.")
+        except AttributeError:
+            print("end_hub not found in map")
+            exit(42)
+        if self.first_line:
             raise ParsingError("file is empty or has only comments or spaces")
 
     def parse_content_file(self) -> None:
@@ -359,17 +368,29 @@ class Parser:
                 line = self.filter_line(line)
                 if not len(line):
                     continue
-                if line.startswith("nb_drones:") and not self.nb_drones and self.first_line:
+                if line.startswith("nb_drones") and not self.nb_drones and self.first_line:
                     self.parse_number_of_drones(line)
                     self.first_line = 0
-                elif (line.startswith('start_hub') or line.startswith('end_hub') or line.startswith('hub')) and not self.first_line:
+                elif line.startswith('nb_drones') and not self.first_line:
+                    raise ParsingError("Error: nb_drones must in first line")
+                elif line.startswith('start_hub') and not self.count_start_hub and not self.first_line:
+                    self.parse_hub(line)
+                    self.count_start_hub = 1
+                elif line.startswith('start_hub') and self.count_start_hub:
+                    raise ParsingError("Error: start_hub must be a unique hub!.")
+                elif line.startswith('end_hub') and not self.count_end_hub and not self.first_line:
+                    self.parse_hub(line)
+                    self.count_end_hub = 1
+                elif line.startswith('end_hub') and self.count_end_hub:
+                    raise ParsingError("Error: end_hub must be a unique hub!")
+                elif line.startswith('hub') and not self.first_line:
                     self.parse_hub(line)
                 elif line.startswith('connection:') and not self.first_line:
                     self.parse_connection(line)
                 else:
                     raise ParsingError("ParsingError: line starts with different value!")
         self.is_completed_data()
-   
+
     def get_parsed_data(self) -> ParsedData:
         """get all data need for graph like:
             start_hub - end_hub - hubs and connections
