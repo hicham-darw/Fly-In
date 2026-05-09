@@ -1,23 +1,9 @@
-from src.Zone.Zone import Hub, Connection
+from src.DataClasses.DataClasses import Hub, Connection
 from typing_extensions import Self
 from src.Enums.Enums import TypeZone
 
 
 class GraphBuilder:
-
-    def __init__(self) -> None:
-        """Constructor method take only required like start_hub and end_hub
-            initial attributes of object only
-        Args:
-            None
-        Returns:
-            None
-        """
-        self.__start_hub: Hub = None
-        self.__hubs: list[Hub]= []
-        self.__end_hub: Hub = None
-        self.__connections: list[Connection] = list()
-        self.__adjacency_list: dict[str, list[str]] = dict()
 
     def build_start_hub(self, start_hub: Hub) -> Self:
         """setter method set start_hub
@@ -28,8 +14,7 @@ class GraphBuilder:
         Returns:
             self: Self return Same object
         """
-        if self.__start_hub is None:
-            self.__start_hub = start_hub
+        self.__start_hub: Hub = start_hub
         return self
 
     def build_end_hub(self, end_hub: Hub) -> Self:
@@ -41,8 +26,7 @@ class GraphBuilder:
         Returns:
             self: (Self): return Same object
         """
-        if self.__end_hub is None:
-            self.__end_hub = end_hub
+        self.__end_hub = end_hub
         return self
 
     def build_hubs(self, hubs: list[Hub]) -> Self:
@@ -55,8 +39,7 @@ class GraphBuilder:
         Returns:
             self: (Self): return same object
         """
-        for hub in hubs:
-            self.__hubs.append(hub)
+        self.__hubs: list[Hub] = hubs
         return self
 
     def build_connections(self, connections: list[Connection]) -> Self:
@@ -80,8 +63,9 @@ class GraphBuilder:
         Returns:
             self: (Self): return same object
         """
-
+        self.__adjacency_list: dict[str, list[str]] = dict()
         for conn in self.__connections:
+            
             if self.__adjacency_list.get(conn.zone1, None) is None:
                 self.__adjacency_list[conn.zone1] = []
             if self.__adjacency_list.get(conn.zone2, None) is None:
@@ -110,15 +94,16 @@ class GraphBuilder:
             return -1
 
         current_zone = hub.metadata.get('zone', TypeZone.normal)
-
+    
         for index, elem in enumerate(lst):
             check_hub = self.get_hub_by_name(elem)
             if check_hub is None:
                 return -1
             check_zone = check_hub.metadata.get('zone', TypeZone.normal)
         
-            if current_zone.value < check_zone.value:
-                return index
+            if isinstance(current_zone, TypeZone) and isinstance(check_zone, TypeZone):
+                if current_zone.value < check_zone.value:
+                    return index
 
         return len(lst)
     
@@ -213,7 +198,7 @@ class GraphBuilder:
                 return conn
         return None
 
-    def get_type_of_zone(self, name_hub: str) -> TypeZone:
+    def get_type_of_zone(self, name_hub: str) -> TypeZone | None:
         """Return the zone type associated with a hub name.
 
         Args:
@@ -222,8 +207,9 @@ class GraphBuilder:
         Returns:
             The zone type associated with the hub.
         """
-        if self.get_start_hub() and name_hub == self.get_start_hub().name:
-            return self.get_start_hub().metadata.get('zone')
+        hub = self.get_start_hub()
+        if hub and name_hub == self.get_start_hub().name:
+            return hub.metadata.get('zone', TypeZone.normal)
         
         if self.get_end_hub() and name_hub == self.get_end_hub().name:
             return self.get_end_hub().metadata.get('zone')
@@ -231,6 +217,7 @@ class GraphBuilder:
             for hub in self.get_regular_hubs():
                 if name_hub == hub.name:
                     return hub.metadata.get('zone')
+        return None
 
     def build(
         self,
@@ -249,11 +236,6 @@ class GraphBuilder:
         Returns:
             None
         """
-        self.build_start_hub(graph_data.get('start_hub'))\
-        .build_end_hub(graph_data.get('end_hub'))\
-        .build_hubs(graph_data.get('hubs'))\
-        .build_connections(graph_data.get('connections'))\
-        .build_adjacency_list()
 
     # getters method
     def get_flow_connection(self, current_hub: str, next_hub: str) -> int:
@@ -333,6 +315,6 @@ class GraphBuilder:
             None
         """
         for conn in self.get_connections():
-            conn.available_drones = conn.metadata['max_link_capacity']
+            conn.available_drones = conn.metadata.get('max_link_capacity', 1)
 
     

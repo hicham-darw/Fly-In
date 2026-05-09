@@ -1,8 +1,17 @@
+from dataclasses import dataclass, field
+from typing import TypedDict
 from src.Enums.Enums import TypeZone
-from dataclasses import dataclass
 from src.Drone.Drone import Drone
 
 
+class HubMetadata(TypedDict):
+    zone: TypeZone
+    color: str | None
+    max_drones: int
+
+
+class ConnectionMetadata(TypedDict):
+    max_link_capacity: int
 
 @dataclass
 class Hub:
@@ -16,12 +25,12 @@ class Hub:
         metadata: Optional metadata associated with the hub.
     """
 
-    type_zone: TypeZone
+    type_zone: str
     name: str
     x: int
     y: int
-    metadata: dict[str, str | int | TypeZone] | None = None
-    drones: list[Drone] | None = None
+    metadata: HubMetadata
+    drones: list[Drone] = field(default_factory=list)
     available_drones: int = 0
 
 
@@ -37,6 +46,20 @@ class Connection:
 
     zone1: str
     zone2: str
-    metadata: dict[str, int] | None = None
+    metadata: ConnectionMetadata
     available_drones: int = 0
-    drones: list[Drone] | None = None
+    drones: list[Drone] = field(default_factory=list)
+
+
+class PathsAndFlow(TypedDict):
+    path: list[str]
+    flow: int
+    turns: int
+
+
+class ParsedData(TypedDict):
+    nb_drones: int
+    start_hub: Hub
+    end_hub: Hub
+    hubs: list[Hub]
+    connections: list[Connection]

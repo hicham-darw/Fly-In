@@ -1,20 +1,21 @@
 import sys
+from time import sleep
+
+from src.DataClasses.DataClasses import ParsedData, PathsAndFlow
 from src.Drone.Drone import Drone
 from src.Enums.Enums import TypeZone
 from src.GraphBuilder.GraphBuilder import GraphBuilder
 from src.Enums.Enums import MetaDataOfHub
 from src.Algorithms.EdmondsKarpAlgo import EdmondsKarpAlgo
-from src.Color.Color import ColorsRGB
-from src.Algorithms.Algo import Algo
-from time import sleep
-import webcolors
 from src.Parser.Parser import Parser
+from src.Visualizer.Visualizer import Visualizer
+
 
 class DroneFlowEngine:
     """engine of simulation made drones can traverse between hubs
     and track each one to reach goal
     """
-    def __init__(self) -> None:
+    def __init__(self, parsed_data: ParsedData) -> None:
         """Constructor engine of flow drones
 
         Args:
@@ -23,41 +24,43 @@ class DroneFlowEngine:
         Return:
             None
         """
-        self.__parsed_data = None
-        self.__algo = None
-
-        self.__graph = None
-        self.__drones: list[Drone] = []
+        self.__parsed_data = parsed_data
+        self.__graph: GraphBuilder = self.__build_graph()
+        self.__algo: EdmondsKarpAlgo = EdmondsKarpAlgo(self.__graph)
+        self.__drones: list[Drone] = self.__create_drones()
 
         self.turns_simulation = 0
 
+    def __build_graph(self) -> GraphBuilder:
+        graph = GraphBuilder()
+        graph.build_start_hub(self.__parsed_data['start_hub'])\
+        .build_end_hub(self.__parsed_data['end_hub'])\
+        .build_hubs(self.__parsed_data['hubs'])\
+        .build_connections(self.__parsed_data['connections'])\
+        .build_adjacency_list()
+        return graph
+    
     def init_algo(self) -> None:
+        if self.__graph is None:
+            return None
         self.__algo = EdmondsKarpAlgo(self.__graph)
 
     def parse_file(self) -> None:
         self.__parser = Parser(sys.argv[1])
         self.__parser.parse()
         self.__parsed_data = self.__parser.get_parsed_data()
-
-    def init_graph(self) -> None:
-        graph_builder = GraphBuilder()
-        graph_builder.build_start_hub(self.__parsed_data.get('start_hub'))\
-        .build_end_hub(self.__parsed_data.get('end_hub'))\
-        .build_hubs(self.__parsed_data.get('hubs'))\
-        .build_connections(self.__parsed_data.get('connections'))\
-        .build_adjacency_list()
-        
-        self.__graph = graph_builder
     
-    def create_drones(self) -> None:
+    def __create_drones(self) -> list[Drone]:
         """create Drones to simulate fly-in
         Args:
             number_of_drones: (int): number_of_drones
         None:
             None
         """
+        drones: list[Drone] = list()
         for i in range(self.__parsed_data['nb_drones']):
-            self.__drones.append(Drone(i + 1))
+            drones.append(Drone(i + 1))
+        return drones
 
     # setter method
     def set_drones_in_start_hub(self) -> None:
@@ -68,11 +71,11 @@ class DroneFlowEngine:
         Return:
             None
         """
-        if self.__graph.get_start_hub().drones is None:
-            self.__graph.get_start_hub().drones = []
-
+        start_hub = self.__graph.get_start_hub()
+        if start_hub.drones is None:
+            start_hub.drones = []
         for drone in self.__drones:
-            self.__graph.get_start_hub().drones.append(drone)
+            start_hub.drones.append(drone)
 
     # getters method ----------------->
     def get_number_of_drones(self) -> int:
@@ -83,7 +86,7 @@ class DroneFlowEngine:
         Returns:
             int: number of drones
         """
-        return self.__nb_drones
+        return len(self.__drones)
 
     def execute_simulation(self) -> None:
         """put drones in start_hub and starting simulation
@@ -95,9 +98,7 @@ class DroneFlowEngine:
         """
         self.set_drones_in_start_hub()
         self.__graph.reset_capacities()
-        all_data = self.__algo.run()
-        for d in all_data:
-            print(d)
+        all_data: list[PathsAndFlow] = self.__algo.run()
         self.start_simulation(all_data)
 
     def not_reaches_goal(self) -> bool:
@@ -110,20 +111,18 @@ class DroneFlowEngine:
                 return True.
                 otherwise return False
         """
-        if self.__graph.get_end_hub().drones is None:
-            return True
-        elif len(self.__graph.get_end_hub().drones) != len(self.__drones):
+        if len(self.__graph.get_end_hub().drones) != len(self.__drones):
             return True
         return False
 
     def start_simulation(
-        self, all_data: list[dict[str, list[str | Drone] | int]]
+        self, all_data: list[PathsAndFlow]
     ) -> None:
 
         while self.not_reaches_goal():
             self.simulate_turn(all_data)
 
-    def simulate_turn(self, all_data: list[dict[str, list[str | Drone] | int]]) -> None:
+    def simulate_turn(self, all_data: list[PathsAndFlow]) -> None:
         """ function simulate 1 turn move all_drones from current_hub to next_hub
 
         Args:
@@ -139,7 +138,7 @@ class DroneFlowEngine:
             i = 0
             while i < len(path) - 1: 
                 next_hub = self.__graph.get_hub_by_name(path[i + 1])
-                if next_hub.drones is None:
+                if next_hub is None or next_hub.drones is None:
                     break
                 i += 1
             if i == len(path) - 1:
@@ -150,7 +149,6 @@ class DroneFlowEngine:
                 i -= 1
         sleep(0.8)
         print()
-        # print("\033[1H", end='')
         self.turns_simulation += 1
 
     def move_drone_has_restricted_zone(self, current_hub_name: str, next_hub_name: str) -> None:
@@ -165,9 +163,11 @@ class DroneFlowEngine:
         """
         current_hub = self.__graph.get_hub_by_name(current_hub_name)
         next_hub = self.__graph.get_hub_by_name(next_hub_name)
+        if current_hub is None or next_hub is None:
+            return None
         conn = self.__graph.get_connection_by_names(current_hub.name, next_hub.name)
-        if conn.drones is None:
-            conn.drones = []
+        if conn is None:
+            return None
 
         if len(conn.drones) > 0:
             if next_hub.drones is None:
@@ -176,7 +176,7 @@ class DroneFlowEngine:
             if drone_in_conn.can_move_to_next_hub() is True:
                 next_hub.drones.append(drone_in_conn)
                 text_move = 'D' + str(drone_in_conn.get_drone_id()) + '-' + next_hub.name + ' ' 
-                self.colored_print(text_move, next_hub.metadata['color'])        
+                Visualizer.colored_print(text_move, next_hub.metadata['color'], None)        
                 if next_hub == self.__graph.get_end_hub():
                     drone_in_conn.set_cant_move()
     
@@ -187,24 +187,7 @@ class DroneFlowEngine:
         if drone.can_move_to_next_hub() is True:
             conn.drones.append(drone)
             text_move = 'D' + str(drone.get_drone_id()) + '-' + conn.zone1 + '-' + conn.zone2 + ' '
-            self.colored_print(text_move, "white", "connection")
-
-    def colored_print(self, move_action: str, color: str, connection=None) -> None:
-            
-        if color is None:
-            color = 'white'
-        try:
-            rgb = webcolors.name_to_rgb(color.lower())
-        except ValueError as e:
-            rgb = webcolors.name_to_rgb('white')
-        colored = '\033[38;2;' + str(rgb.red) + ';' + str(rgb.green) + ';' + str(rgb.blue) + 'm' 
-        if connection is not None:
-            colored += " \033[5m"
-        print(colored, end='', flush=True)
-        for c in move_action:
-            print(c, end='', flush=True)
-            sleep(0.008)
-        print('\033[0m\033[25m', end='', flush=True)            
+            Visualizer.colored_print(text_move, "white", "connection")
 
     def move_drone_has_not_restricted_zone(self, current_hub_name: str, next_hub_name: str) -> None:
         """move drones is normal or preferred zone is only move drones  to next hub
@@ -219,10 +202,9 @@ class DroneFlowEngine:
 
         current_hub = self.__graph.get_hub_by_name(current_hub_name)
         next_hub = self.__graph.get_hub_by_name(next_hub_name)
-
-        if next_hub.drones is None:
-            next_hub.drones = []
-
+        if current_hub is None or next_hub is None:
+            return None
+        
         if not current_hub.drones:
             return
 
@@ -233,7 +215,7 @@ class DroneFlowEngine:
         if drone.can_move_to_next_hub() is True:
             next_hub.drones.append(drone)
             text_move = 'D' + str(drone.get_drone_id()) + '-' + next_hub.name + ' '
-            self.colored_print(text_move, next_hub.metadata['color'])
+            Visualizer.colored_print(text_move, next_hub.metadata['color'], None)
             if next_hub == self.__graph.get_end_hub():
                 drone.set_cant_move()
 
@@ -248,7 +230,7 @@ class DroneFlowEngine:
         """
         next_hub = self.__graph.get_hub_by_name(next_hub_name)
         while flow:
-            if next_hub.metadata[MetaDataOfHub.zone.name].value == TypeZone.restricted.value:
+            if next_hub and next_hub.metadata[MetaDataOfHub.zone.name].value == TypeZone.restricted.value:
                 self.move_drone_has_restricted_zone(current_hub_name, next_hub_name)
             else:
                 self.move_drone_has_not_restricted_zone(current_hub_name, next_hub_name)

@@ -1,22 +1,18 @@
-import sys
-from src.Parser.Parser import Parser
-from src.GraphBuilder.GraphBuilder import GraphBuilder
+from sys import exit, argv
 from src.DroneFlowEngine.DroneFlowEngine import DroneFlowEngine
-from src.Algorithms.EdmondsKarpAlgo import EdmondsKarpAlgo
+from src.Parser.Parser import Parser
 
 if __name__ == '__main__':
 
     #  check argument.........!
-    if len(sys.argv) != 2:
+    if len(argv) != 2:
         print("Usage: python3 main.py <path to file>.")
-        sys.exit(42)
+        exit(42)
 
-    flow_engine = DroneFlowEngine()
-    flow_engine.parse_file()
-    flow_engine.init_graph()
-    flow_engine.init_algo()
-    flow_engine.create_drones()
-    flow_engine.set_drones_in_start_hub()
+    parser = Parser(argv[1])
+    parsed_data = parser.parse()
+
+    flow_engine = DroneFlowEngine(parsed_data)
     flow_engine.execute_simulation()
 
-    print("number of turns:", flow_engine.turns_simulation)
+    print("number of turns: ", flow_engine.turns_simulation)

@@ -1,8 +1,7 @@
 from src.Algorithms.Algo import Algo
 from src.GraphBuilder.GraphBuilder import GraphBuilder
 from src.Algorithms.BreadthFirstSearch import BreadthFirstSearch
-from collections import deque
-
+from src.DataClasses.DataClasses import PathsAndFlow
 
 class EdmondsKarpAlgo(Algo):
 
@@ -11,28 +10,30 @@ class EdmondsKarpAlgo(Algo):
 
         Args:
             graph: (GraphBuilder): graph to run algo on it
-        
         returns:
             None
         """
-        super().__init__(graph)        
+        super().__init__(graph)
 
     def get_max_flow(self, path_to_exit: list[str]) -> int:
         """Return the minimum flow along a path to the exit.
 
         Args:
             path_to_exit: The path whose flow should be evaluated.
-
         Returns:
             The minimum flow value found on the path.
         """
         flow = 0
         for i in range(len(path_to_exit) - 1):
-            
-            flow_conn = self._graph.get_flow_connection(path_to_exit[i], path_to_exit[i + 1])
-            flow_hub = self._graph.get_hub_by_name(path_to_exit[i + 1]).available_drones
+            first = path_to_exit[i]
+            second = path_to_exit[i + 1]
+            flow_conn = self._graph.get_flow_connection(first, second)
+            next_hub = self._graph.get_hub_by_name(path_to_exit[i + 1])
+            if next_hub is None:
+                break
+            flow_hub = next_hub.available_drones
 
-            if flow_conn is None or flow_hub is None:
+            if flow_conn == -1 or flow_hub == -1:
                 break
 
             if flow_hub < flow_conn:
@@ -55,8 +56,12 @@ class EdmondsKarpAlgo(Algo):
             flow (int): [updated by flow]
         """
         for index in range(len(path) - 1):
-            connection = self._graph.get_connection_by_names(path[index], path[index + 1])
+            first = path[index]
+            second = path[index + 1]
+            connection = self._graph.get_connection_by_names(first, second)
             next_hub = self._graph.get_hub_by_name(path[index + 1])
+            if next_hub is None:
+                break
             next_hub.available_drones -= flow
             if connection:
                 connection.available_drones -= flow
@@ -72,19 +77,23 @@ class EdmondsKarpAlgo(Algo):
         number_of_turns = 0
         for i in range(0, len(path) - 1):
             next_hub = self._graph.get_hub_by_name(path[i + 1])
-            if next_hub.metadata['zone'].value == 3:
+            if next_hub is None:
+                break
+            zone = next_hub.metadata.get('zone')
+            if zone is None or not hasattr(zone, 'value'):
+                break
+            if zone.value == 3:
                 number_of_turns += 2
             else:
                 number_of_turns += 1
         return number_of_turns
 
-    def  create_bfs_algorithm(self) -> BreadthFirstSearch:
+    def create_bfs_algorithm(self) -> BreadthFirstSearch:
         return BreadthFirstSearch(self._graph)
 
-    
     #  should be set breadth first search required !!
-    def run(self) -> list[dict[str, list[str], int]]:
-        all_paths = list()
+    def run(self) -> list[PathsAndFlow]:
+        all_paths: list[PathsAndFlow] = list()
         bfs = self.create_bfs_algorithm()
 
         while True:
@@ -97,5 +106,9 @@ class EdmondsKarpAlgo(Algo):
             flow_path = self.get_max_flow(path_to_goal)
 
             number_of_turns_in_path = self.count_turns_in_path(path_to_goal)
-            all_paths.append({'path': path_to_goal, 'flow': flow_path, 'turns': number_of_turns_in_path})
+            all_paths.append({
+                'path': path_to_goal,
+                'flow': flow_path,
+                'turns': number_of_turns_in_path
+            })
             self.update_flow_network(path_to_goal, flow_path)

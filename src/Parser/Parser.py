@@ -1,8 +1,10 @@
 import re
+from typing import TypedDict
+from src.DataClasses.DataClasses import ParsedData, HubMetadata, ConnectionMetadata
 from src.Exceptions.ParsingError import ParsingError
-from src.Zone.Zone import Hub, Connection
+from src.DataClasses.DataClasses import Hub, Connection
 from src.Enums.Enums import TypeZone, MetaDataOfHub, MetaDataOfConnection
-from src.Drone.Drone import Drone
+
 
 class Parser:
     """Parse a map file into drones, hubs, and connections.
@@ -19,16 +21,17 @@ class Parser:
         Returns:
             None
         """
+        self.hubs: list[Hub] = list()
+        self.connections: list[Connection] = list()
+        
         self.filename = filename
         self.nb_drones = 0
-        self.start_hub = None
-        self.end_hub = None
-        self.hubs = list()
-        self.connections = list()
         self.first_line = 1
-        self.name_zones = list()
+        self.name_zones: list[str] = list()
+        self.count_start_hub = 0
+        self.count_end_hub = 0
 
-    def parse(self) -> dict[str, list[Hub] | Hub | int | list[Connection]]:
+    def parse(self) -> ParsedData | None:
         """ parse content file and return dictionary of data
                 if throwing an exception in parsing catch it internaly an return None
                 otherwise return parsed_data
@@ -47,16 +50,18 @@ class Parser:
             print("Error: file not found!.")
         except PermissionError:
             print("Error: file not permitted!.")
+        except IsADirectoryError:
+            print(f"Error: {self.filename} is a directory!.")
         return None
 
     # getters
-    def get_default_metadata_of_hub(self)-> None:
+    def get_default_metadata_of_hub(self) -> HubMetadata:
         """this method return default metadata of hub
 
         Args:
             None
         Returns:
-            None
+            dictionary default metadata of hub
         """
         return {
             MetaDataOfHub.zone.name: TypeZone.normal,
@@ -64,7 +69,7 @@ class Parser:
             MetaDataOfHub.max_drones.name: 1
         }
 
-    def get_default_metadata_of_connection(self) -> None:
+    def get_default_metadata_of_connection(self) -> ConnectionMetadata:
         """method return default metadata of connection
 
         Args:
@@ -104,7 +109,7 @@ class Parser:
         
         start_bracket = line.find('[')
         if start_bracket != -1:
-            metadata = self.parse_metadata_of_hub(line[start_bracket:])
+            metadata: HubMetadata = self.parse_metadata_of_hub(line[start_bracket:])
             line_without_bracket = line[:start_bracket].rstrip()
         else:
             metadata = self.get_default_metadata_of_hub()
@@ -119,7 +124,7 @@ class Parser:
             metadata=metadata
         )
 
-    def parse_metadata_of_hub(self, data: str) -> dict[str, int | str | TypeZone]:
+    def parse_metadata_of_hub(self, data: str) -> HubMetadata:
         """Parse hub metadata from a bracketed block.
 
         Args:
@@ -129,7 +134,7 @@ class Parser:
         Returns:
             A dictionary containing parsed metadata values.
         """
-        metadata = self.get_default_metadata_of_hub()
+        metadata: HubMetadata = self.get_default_metadata_of_hub()
         data = data[1:-1]
         if len(data.split()) > 3:
             raise ParsingError("metadata contains 3 pairs at most.")
@@ -141,8 +146,8 @@ class Parser:
         return metadata
 
     def parse_each_pair_in_metadata_of_hub(
-        self, key_val_data: list[str], metadata: dict[str, str | TypeZone | int | None]
-    ) -> dict[str, str | TypeZone | int | None]:
+        self, key_val_data: list[str], metadata: HubMetadata
+    ) -> HubMetadata:
         """method parse each pair in metadata otherwise raise an exception (parsing)
 
         Args:
@@ -174,8 +179,11 @@ class Parser:
         else:
             raise ParsingError("invalid metadata. please check hubs in file")
         
-        if metadata[MetaDataOfHub.max_drones.name] < 0:
-            raise ParsingError("metadata max_drones must be greather than Zero.")
+        max_drones = metadata[MetaDataOfHub.max_drones.name]
+        if not isinstance(max_drones, int):
+            raise ParsingError('max_drones must be integer.')
+        if max_drones < 0:
+            raise ParsingError("max_drones must be greater than zero.")
         return metadata
 
     def parse_connection(self, line: str) -> None:
@@ -209,7 +217,7 @@ class Parser:
             )
         )
 
-    def parse_metadata_of_connection(self, data: str) -> dict[str, int]:
+    def parse_metadata_of_connection(self, data: str) -> ConnectionMetadata:
         """Parse connection metadata from a bracketed block.
 
         Args:
@@ -238,7 +246,7 @@ class Parser:
         type_zone: str,
         name: str,
         x: int, y: int,
-        metadata: dict[str, str | dict[str, str | int | None]]
+        metadata: HubMetadata
     ) -> None:
         """create new Zone it based on type_zone
         Args:
@@ -362,7 +370,7 @@ class Parser:
                     raise ParsingError("ParsingError: line starts with different value!")
         self.is_completed_data()
    
-    def get_parsed_data(self) -> dict[str, list[Hub] | Hub | int | list[Connection]]:
+    def get_parsed_data(self) -> ParsedData:
         """get all data need for graph like:
             start_hub - end_hub - hubs and connections
 

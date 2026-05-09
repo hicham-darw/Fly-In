@@ -1,0 +1,119 @@
+nb_drones: 20
+
+# =====================================================
+# START / END
+# =====================================================
+
+start_hub: start 0 0 [color=green max_drones=20]
+end_hub: end 12 0 [color=rainbow max_drones=20]
+
+# =====================================================
+# PATH A (FAST)
+# FLOW = 1
+# =====================================================
+
+hub: a1 1 2 [color=red max_drones=1]
+hub: a2 2 2 [color=red max_drones=1]
+hub: a3 3 2 [color=orange max_drones=1]
+
+# =====================================================
+# PATH B (MAIN)
+# FLOW = 2
+# =====================================================
+
+hub: b1 1 0 [color=blue max_drones=2]
+hub: b2 2 0 [color=blue max_drones=2]
+hub: b3 3 0 [color=cyan max_drones=2]
+hub: b4 4 0 [color=cyan max_drones=2]
+
+# =====================================================
+# PATH C (HEAVY)
+# FLOW = 3
+# =====================================================
+
+hub: c1 1 -2 [color=purple max_drones=3]
+hub: c2 2 -2 [color=purple max_drones=3]
+hub: c3 3 -2 [color=magenta max_drones=3]
+hub: c4 4 -2 [color=magenta max_drones=3]
+hub: c5 5 -2 [color=magenta max_drones=3]
+
+# =====================================================
+# MERGE ZONE
+# =====================================================
+
+hub: merge1 6 1 [color=yellow max_drones=6]
+hub: merge2 7 0 [color=yellow max_drones=6]
+hub: merge3 8 -1 [color=yellow max_drones=6]
+
+# =====================================================
+# FINAL SECTION
+# =====================================================
+
+hub: final1 9 0 [color=crimson max_drones=6]
+hub: final2 10 0 [color=crimson max_drones=6]
+hub: final3 11 0 [color=crimson max_drones=6]
+
+# =====================================================
+# CONNECTIONS
+# =====================================================
+
+# ---------- START SPLIT ----------
+
+connection: start-a1 [max_link_capacity=1]
+
+connection: start-b1 [max_link_capacity=2]
+
+connection: start-c1 [max_link_capacity=3]
+
+# =====================================================
+# PATH A
+# =====================================================
+
+connection: a1-a2 [max_link_capacity=1]
+connection: a2-a3 [max_link_capacity=1]
+connection: a3-merge1 [max_link_capacity=1]
+
+# =====================================================
+# PATH B
+# =====================================================
+
+connection: b1-b2 [max_link_capacity=2]
+connection: b2-b3 [max_link_capacity=2]
+connection: b3-b4 [max_link_capacity=2]
+connection: b4-merge2 [max_link_capacity=2]
+
+# =====================================================
+# PATH C
+# =====================================================
+
+connection: c1-c2 [max_link_capacity=3]
+connection: c2-c3 [max_link_capacity=3]
+connection: c3-c4 [max_link_capacity=3]
+connection: c4-c5 [max_link_capacity=3]
+connection: c5-merge3 [max_link_capacity=3]
+
+# =====================================================
+# CROSS LINKS
+# =====================================================
+
+connection: a2-b2 [max_link_capacity=1]
+connection: b3-c3 [max_link_capacity=1]
+
+# =====================================================
+# MERGE
+# =====================================================
+
+connection: merge1-merge2 [max_link_capacity=3]
+connection: merge2-merge3 [max_link_capacity=3]
+
+connection: merge1-final1 [max_link_capacity=2]
+connection: merge2-final1 [max_link_capacity=2]
+connection: merge3-final1 [max_link_capacity=3]
+
+# =====================================================
+# FINAL
+# =====================================================
+
+connection: final1-final2 [max_link_capacity=6]
+connection: final2-final3 [max_link_capacity=6]
+connection: final3-end [max_link_capacity=6]
