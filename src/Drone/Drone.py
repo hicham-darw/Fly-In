@@ -13,7 +13,9 @@ class Drone:
         """
         self.__drone_id = drone_id
         self.__can_move = True
+
     # getter method
+
     def get_drone_id(self) -> int:
         """getter method for incapsulation get drone id
 

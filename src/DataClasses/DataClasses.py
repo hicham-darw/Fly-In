@@ -13,6 +13,7 @@ class HubMetadata(TypedDict):
 class ConnectionMetadata(TypedDict):
     max_link_capacity: int
 
+
 @dataclass
 class Hub:
     """Represent a zone node in the parsed graph.

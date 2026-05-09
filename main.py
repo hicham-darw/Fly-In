@@ -9,8 +9,8 @@ if __name__ == '__main__':
         print("Usage: python3 main.py <path to file>.")
         exit(42)
     parser = Parser(argv[1])
-    parser.parse()
-    parsed_data = parser.get_parsed_data()
+    parsed_data = parser.parse()
+
     flow_engine = DroneFlowEngine(parsed_data)
     flow_engine.execute_simulation()
 

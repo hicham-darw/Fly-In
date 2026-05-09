@@ -1,4 +1,3 @@
-import sys
 from time import sleep
 
 from src.DataClasses.DataClasses import ParsedData, PathsAndFlow
@@ -7,7 +6,6 @@ from src.Enums.Enums import TypeZone
 from src.GraphBuilder.GraphBuilder import GraphBuilder
 from src.Enums.Enums import MetaDataOfHub
 from src.Algorithms.EdmondsKarpAlgo import EdmondsKarpAlgo
-from src.Parser.Parser import Parser
 from src.Visualizer.Visualizer import Visualizer
 
 
@@ -19,7 +17,8 @@ class DroneFlowEngine:
         """Constructor engine of flow drones
 
         Args:
-            graph (GraphBuilder): [graph to simulate hubs and connection between them]
+            graph (GraphBuilder):
+                [graph to simulate hubs and connection between them]
             drones (list[Drone]): [drones]
         Return:
             None
@@ -32,26 +31,23 @@ class DroneFlowEngine:
         self.turns_simulation = 0
 
     def __build_graph(self) -> GraphBuilder:
-        graph = GraphBuilder()
-        graph.build_start_hub(self.__parsed_data['start_hub'])\
-        .build_end_hub(self.__parsed_data['end_hub'])\
-        .build_hubs(self.__parsed_data['hubs'])\
-        .build_connections(self.__parsed_data['connections'])\
-        .build_adjacency_list()
-        return graph
-    
-    def init_algo(self) -> None:
-        if self.__graph is None:
-            return None
-        self.__algo = EdmondsKarpAlgo(self.__graph)
+        """build graph by parsed_data passed to constructor
 
-    def parse_file(self) -> None:
-        self.__parser = Parser(sys.argv[1])
-        self.__parser.parse()
-        self.__parsed_data = self.__parser.get_parsed_data()
-    
+        Args:
+            None
+        Returns:
+            GraphBuilder: [completely graph to use with helpful functions]
+        """
+        graph = GraphBuilder()
+        (graph.build_start_hub(self.__parsed_data['start_hub'])
+         .build_end_hub(self.__parsed_data['end_hub'])
+         .build_hubs(self.__parsed_data['hubs'])
+         .build_connections(self.__parsed_data['connections'])
+         .build_adjacency_list())
+        return graph
+
     def __create_drones(self) -> list[Drone]:
-        """create Drones to simulate fly-in
+        """create Drones to simulate agents
         Args:
             number_of_drones: (int): number_of_drones
         None:
@@ -92,7 +88,7 @@ class DroneFlowEngine:
         """put drones in start_hub and starting simulation
 
         Args:
-            None        
+            None
         Returns:
             None
         """
@@ -118,15 +114,19 @@ class DroneFlowEngine:
     def start_simulation(
         self, all_data: list[PathsAndFlow]
     ) -> None:
-
+        """start routing drones in between hubs
+        Args:
+            all_data (list[PathsAndFlow]): [contains path flow and turns]
+        """
         while self.not_reaches_goal():
             self.simulate_turn(all_data)
 
     def simulate_turn(self, all_data: list[PathsAndFlow]) -> None:
-        """ function simulate 1 turn move all_drones from current_hub to next_hub
+        """ function simulate 1 turn move all_drones from current_hub to next
 
         Args:
-            all_data: list[] : all_data ned to run 1 turn and move drones to next hub
+            all_data: list[] : all_data ned to run 1 turn
+            and move drones to next
 
         Returns:
             None
@@ -136,7 +136,7 @@ class DroneFlowEngine:
             flow = all_data[index_data]['flow']
 
             i = 0
-            while i < len(path) - 1: 
+            while i < len(path) - 1:
                 next_hub = self.__graph.get_hub_by_name(path[i + 1])
                 if next_hub is None or next_hub.drones is None:
                     break
@@ -151,9 +151,12 @@ class DroneFlowEngine:
         print()
         self.turns_simulation += 1
 
-    def move_drone_has_restricted_zone(self, current_hub_name: str, next_hub_name: str) -> None:
-        """ move drone if nect_hub is restricted should check connection 
-            if has simulation not completed
+    def move_drone_has_restricted_zone(
+        self,
+        current_hub_name: str,
+        next_hub_name: str
+    ) -> None:
+        """ move drones to restricted zone each drone must take 2 moves
 
         Args:
             current_hub : drone start flyin to
@@ -165,7 +168,9 @@ class DroneFlowEngine:
         next_hub = self.__graph.get_hub_by_name(next_hub_name)
         if current_hub is None or next_hub is None:
             return None
-        conn = self.__graph.get_connection_by_names(current_hub.name, next_hub.name)
+        conn = self.__graph.get_connection_by_names(
+            current_hub.name, next_hub.name
+        )
         if conn is None:
             return None
 
@@ -175,22 +180,28 @@ class DroneFlowEngine:
             drone_in_conn = conn.drones.pop(0)
             if drone_in_conn.can_move_to_next_hub() is True:
                 next_hub.drones.append(drone_in_conn)
-                text_move = 'D' + str(drone_in_conn.get_drone_id()) + '-' + next_hub.name + ' ' 
-                Visualizer.colored_print(text_move, next_hub.metadata['color'], None)        
+                text_move = 'D' + str(drone_in_conn.get_drone_id())
+                text_move += '-' + next_hub.name + ' '
+                Visualizer.colored_print(
+                    text_move, next_hub.metadata['color'], None
+                )
                 if next_hub == self.__graph.get_end_hub():
                     drone_in_conn.set_cant_move()
-    
+
         if not current_hub.drones:
             return
 
         drone = current_hub.drones.pop(0)
         if drone.can_move_to_next_hub() is True:
             conn.drones.append(drone)
-            text_move = 'D' + str(drone.get_drone_id()) + '-' + conn.zone1 + '-' + conn.zone2 + ' '
+            text_move = 'D' + str(drone.get_drone_id())
+            text_move += '-' + conn.zone1 + '-' + conn.zone2 + ' '
             Visualizer.colored_print(text_move, "white", "connection")
 
-    def move_drone_has_not_restricted_zone(self, current_hub_name: str, next_hub_name: str) -> None:
-        """move drones is normal or preferred zone is only move drones  to next hub
+    def move_drone_has_not_restricted_zone(
+        self, current_hub_name: str, next_hub_name: str
+    ) -> None:
+        """move drones is normal or preferred zone cost 1 move
 
         Args:
             current_hub_name: name of current_hub
@@ -204,7 +215,7 @@ class DroneFlowEngine:
         next_hub = self.__graph.get_hub_by_name(next_hub_name)
         if current_hub is None or next_hub is None:
             return None
-        
+
         if not current_hub.drones:
             return
 
@@ -214,24 +225,34 @@ class DroneFlowEngine:
             return
         if drone.can_move_to_next_hub() is True:
             next_hub.drones.append(drone)
-            text_move = 'D' + str(drone.get_drone_id()) + '-' + next_hub.name + ' '
-            Visualizer.colored_print(text_move, next_hub.metadata['color'], None)
+            text_move = 'D' + str(drone.get_drone_id())
+            text_move += '-' + next_hub.name + ' '
+            Visualizer.colored_print(
+                text_move, next_hub.metadata['color'], None
+            )
             if next_hub == self.__graph.get_end_hub():
                 drone.set_cant_move()
 
-    def move_drones_to_next_hub(self, current_hub_name: str, next_hub_name: str, flow: int) -> None:
+    def move_drones_to_next_hub(
+        self, current_hub_name: str, next_hub_name: str, flow: int
+    ) -> None:
         """like manager count how many drones can fly to next hub
+
         Args:
             current_hub_name: name of current_hub
             next_hub_name: name of next hub
-        
         Returns:
             None
         """
         next_hub = self.__graph.get_hub_by_name(next_hub_name)
         while flow:
-            if next_hub and next_hub.metadata[MetaDataOfHub.zone.name].value == TypeZone.restricted.value:
-                self.move_drone_has_restricted_zone(current_hub_name, next_hub_name)
+            if next_hub and next_hub.metadata[MetaDataOfHub.zone.name].value\
+                    == TypeZone.restricted.value:
+                self.move_drone_has_restricted_zone(
+                    current_hub_name, next_hub_name
+                )
             else:
-                self.move_drone_has_not_restricted_zone(current_hub_name, next_hub_name)
+                self.move_drone_has_not_restricted_zone(
+                    current_hub_name, next_hub_name
+                )
             flow -= 1

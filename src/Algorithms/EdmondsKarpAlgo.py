@@ -3,6 +3,7 @@ from src.GraphBuilder.GraphBuilder import GraphBuilder
 from src.Algorithms.BreadthFirstSearch import BreadthFirstSearch
 from src.DataClasses.DataClasses import PathsAndFlow
 
+
 class EdmondsKarpAlgo(Algo):
 
     def __init__(self, graph: GraphBuilder) -> None:
@@ -51,9 +52,12 @@ class EdmondsKarpAlgo(Algo):
     def update_flow_network(self, path: list[str], flow: int) -> None:
         """ update_flow_network
             update available_drones in hub and connection
+
         Args:
             path (list[str]): [name of hubs and connection to update path]
             flow (int): [updated by flow]
+        Returns:
+            None
         """
         for index in range(len(path) - 1):
             first = path[index]
@@ -89,10 +93,24 @@ class EdmondsKarpAlgo(Algo):
         return number_of_turns
 
     def create_bfs_algorithm(self) -> BreadthFirstSearch:
+        """reaturn object algorithm of breadth first search
+        Args:
+            None
+        Returns:
+            None
+        """
         return BreadthFirstSearch(self._graph)
 
     #  should be set breadth first search required !!
     def run(self) -> list[PathsAndFlow]:
+        """run method execute algorithm on graph to find
+            paths and flow
+
+        Args:
+            None
+        Returns:
+            list[PathAndFlow] : list contain dictionary of paths and flow..
+        """
         all_paths: list[PathsAndFlow] = list()
         bfs = self.create_bfs_algorithm()
 
