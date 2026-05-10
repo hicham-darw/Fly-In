@@ -281,8 +281,10 @@ class Parser:
         )
         if type_zone == "start_hub":
             self.start_hub = new_hub
+            self.start_hub.metadata['max_drones'] = self.nb_drones
         elif type_zone == 'end_hub':
             self.end_hub = new_hub
+            self.end_hub.metadata['max_drones'] = self.nb_drones
         else:
             self.hubs.append(new_hub)
         self.add_name_to_name_zones(new_hub.name)

@@ -44,7 +44,6 @@ class BreadthFirstSearch(Algo):
                     next = self._graph.get_hub_by_name(neighbor)
                     if connection is None or next is None:
                         continue
-
                     if self.__not_available_drone_to_move(connection, next):
                         continue
 

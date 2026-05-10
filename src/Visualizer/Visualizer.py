@@ -28,5 +28,5 @@ class Visualizer:
         print(colored, end='', flush=True)
         for c in move_action:
             print(c, end='', flush=True)
-            sleep(0.02)
+            sleep(0.009)
         print('\033[0m\033[25m', end='', flush=True)
