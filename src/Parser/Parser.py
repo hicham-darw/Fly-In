@@ -143,6 +143,8 @@ class Parser:
         """
         metadata: HubMetadata = self.get_default_metadata_of_hub()
         data = data[1:-1]
+        if not data:
+            return metadata
         if len(data.split()) > 3:
             raise ParsingError("metadata contains 3 pairs at most.")
 
@@ -250,7 +252,13 @@ class Parser:
             raise ParsingError(
                 "metadata connection key must be {max_link_capacity}"
             )
-        elif int(pairs[1]) < 0:
+        try:
+            max_capacity = int(pairs[1])
+        except ValueError:
+            raise ParsingError(
+                f"max_link_capacity: '{pairs[1]}' must be positive number."
+            )
+        if max_capacity < 0:
             raise ParsingError("max_link_capacity must be greather than zero.")
         metadata[MetaDataOfConnection.max_link_capacity.name] = int(pairs[1])
         return metadata
@@ -302,20 +310,37 @@ class Parser:
         """
         names = names_hub.split('-')
         if len(names) != 2:
-            raise ParsingError("must be two hubs name in 1 connection")
+            raise ParsingError(f"{names_hub} doesn't match syntax!")
         for conn in self.connections:
             if conn.zone1 == names[0] and conn.zone2 == names[1]:
                 raise ParsingError("connection must not appear more than once")
             elif conn.zone2 == names[0] and conn.zone1 == names[1]:
                 raise ParsingError("connection must not appear more than once")
 
-        if names[0] not in [self.start_hub.name] + [self.end_hub.name]\
-                + [hub.name for hub in self.hubs]:
-            raise ParsingError(f"{names[0]} must be a name from hubs")
-        elif names[1] not in [self.start_hub.name] + [self.end_hub.name]\
-                + [hub.name for hub in self.hubs]:
-            raise ParsingError(f"{names[1]} must be a name from hubs")
+        if names[0] not in self.get_all_hubs_name():
+            raise ParsingError(f"'{names[0]}' must be a name from hubs")
+        elif names[1] not in self.get_all_hubs_name():
+            raise ParsingError(f"'{names[1]}' must be a name from hubs")
         return names
+
+    def get_all_hubs_name(self) -> list[str]:
+        """get names of hub already created
+
+        Returns:
+            list[str]: [list contain all names of hubs]
+        """
+        hubs: list[str] = list()
+        try:
+            hubs.append(self.start_hub.name)
+        except AttributeError:
+            pass
+        try:
+            hubs.append(self.end_hub.name)
+        except AttributeError:
+            ...
+        for hub in self.hubs:
+            hubs.append(hub.name)
+        return hubs
 
     def add_name_to_name_zones(self, new_name: str) -> None:
         """add name to name_zones for each hib has a unique name
@@ -393,7 +418,7 @@ class Parser:
                 if not len(line):
                     continue
                 if line.startswith("nb_drones") and\
-                        not self.nb_drones and self.first_line:
+                        self.first_line:
                     self.parse_number_of_drones(line)
                     self.first_line = 0
                 elif line.startswith('nb_drones') and not self.first_line:
@@ -403,20 +428,24 @@ class Parser:
                     self.parse_hub(line)
                     self.count_start_hub = 1
                 elif line.startswith('start_hub') and self.count_start_hub:
-                    raise ParsingError("Error: start_hub must be a unique hub")
+                    raise ParsingError(
+                        "Error: duplicated start_hub in file map"
+                    )
                 elif line.startswith('end_hub') and not self.count_end_hub\
                         and not self.first_line:
                     self.parse_hub(line)
                     self.count_end_hub = 1
                 elif line.startswith('end_hub') and self.count_end_hub:
-                    raise ParsingError("Error: end_hub must be a unique hub!")
+                    raise ParsingError(
+                        "Error: duplicated end_hub in file map!"
+                    )
                 elif line.startswith('hub') and not self.first_line:
                     self.parse_hub(line)
                 elif line.startswith('connection:') and not self.first_line:
                     self.parse_connection(line)
                 else:
                     raise ParsingError(
-                        "ParsingError: line starts with different value!"
+                        "ParsingError: {line} starts with different value!"
                     )
         self.is_completed_data()
 

@@ -1,3 +1,4 @@
+import sys
 from time import sleep
 
 from src.DataClasses.DataClasses import ParsedData, PathsAndFlow
@@ -95,6 +96,12 @@ class DroneFlowEngine:
         self.set_drones_in_start_hub()
         self.__graph.reset_capacities()
         all_data: list[PathsAndFlow] = self.__algo.run()
+        if not all_data:
+            print(
+                "Error: No path found! from start hub to end hub.",
+                file=sys.stderr
+            )
+            sys.exit(42)
         self.start_simulation(all_data)
 
     def not_reaches_goal(self) -> bool:

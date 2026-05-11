@@ -1,0 +1,2 @@
+typing_extensions==4.15.0
+webcolors==25.10.0

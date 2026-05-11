@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Any
 from src.Algorithms.Algo import Algo
 from src.GraphBuilder.GraphBuilder import GraphBuilder
 from src.DataClasses.DataClasses import Hub, Connection
@@ -9,7 +10,7 @@ class BreadthFirstSearch(Algo):
     def __init__(self, graph: GraphBuilder) -> None:
         super().__init__(graph)
 
-    def run(self) -> list[str]:
+    def run(self) -> Any:
         """Return the first path found from the start hub to the end hub.
 
         Returns:

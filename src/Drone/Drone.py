@@ -28,6 +28,6 @@ class Drone:
 
     def can_move_to_next_hub(self) -> bool:
         return self.__can_move
-    
+
     def set_cant_move(self) -> None:
         self.__can_move = False

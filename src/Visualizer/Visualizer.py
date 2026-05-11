@@ -1,4 +1,3 @@
-# mypy: disable-error-code=import-untyped
 from webcolors import name_to_rgb
 from time import sleep
 
@@ -28,5 +27,5 @@ class Visualizer:
         print(colored, end='', flush=True)
         for c in move_action:
             print(c, end='', flush=True)
-            sleep(0.009)
+            sleep(0.016)
         print('\033[0m\033[25m', end='', flush=True)
