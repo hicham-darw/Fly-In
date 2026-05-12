@@ -10,10 +10,23 @@ class Visualizer:
     @classmethod
     def colored_print(
         cls,
-        move_action: str,
+        msg: str,
         color: str | None,
         connection: str | None
     ) -> None:
+        """class method print msg with specific color
+            or blinking if connection not None
+            or default color if not found color
+
+        Args:
+            msg: (str): msg should display
+            color: (str | None): color need to display or default
+                if None or not found
+            connections: (str | None): if found connection blink output
+                if not None
+        Returns:
+            None
+        """
         if color is None:
             color = 'white'
         try:
@@ -24,8 +37,9 @@ class Visualizer:
         colored += str(rgb.green) + ';' + str(rgb.blue) + 'm'
         if connection is not None:
             colored += " \033[5m"
+
         print(colored, end='', flush=True)
-        for c in move_action:
+        for c in msg:
             print(c, end='', flush=True)
             sleep(0.016)
         print('\033[0m\033[25m', end='', flush=True)

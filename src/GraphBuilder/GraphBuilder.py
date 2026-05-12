@@ -61,20 +61,20 @@ class GraphBuilder:
         self.__adjacency_list: dict[str, list[str]] = dict()
         for conn in self.__connections:
 
-            if self.__adjacency_list.get(conn.zone1, None) is None:
-                self.__adjacency_list[conn.zone1] = []
-            if self.__adjacency_list.get(conn.zone2, None) is None:
-                self.__adjacency_list[conn.zone2] = []
+            if self.__adjacency_list.get(conn.zone_one, None) is None:
+                self.__adjacency_list[conn.zone_one] = []
+            if self.__adjacency_list.get(conn.zone_two, None) is None:
+                self.__adjacency_list[conn.zone_two] = []
 
             pos = self.get_position_in_adjacency_list(
-                conn.zone2, self.__adjacency_list[conn.zone1]
+                conn.zone_two, self.__adjacency_list[conn.zone_one]
             )
-            self.__adjacency_list[conn.zone1].insert(pos, conn.zone2)
+            self.__adjacency_list[conn.zone_one].insert(pos, conn.zone_two)
 
             pos = self.get_position_in_adjacency_list(
-                conn.zone1, self.__adjacency_list[conn.zone2]
+                conn.zone_one, self.__adjacency_list[conn.zone_two]
             )
-            self.__adjacency_list[conn.zone2].insert(pos, conn.zone1)
+            self.__adjacency_list[conn.zone_one].insert(pos, conn.zone_two)
         return self
 
     # getter methods
@@ -191,9 +191,9 @@ class GraphBuilder:
             Connection: [edge Object contains own data]
         """
         for conn in self.__connections:
-            if conn.zone1 == current_hub and conn.zone2 == next_hub:
+            if conn.zone_one == current_hub and conn.zone_two == next_hub:
                 return conn
-            elif conn.zone2 == current_hub and conn.zone1 == next_hub:
+            elif conn.zone_two == current_hub and conn.zone_one == next_hub:
                 return conn
         return None
 
@@ -247,9 +247,9 @@ class GraphBuilder:
             int: [flow between them or -1 if not find connection]
         """
         for conn in self.get_connections():
-            if conn.zone1 == current_hub and conn.zone2 == next_hub:
+            if conn.zone_one == current_hub and conn.zone_two == next_hub:
                 return conn.available_drones
-            elif conn.zone2 == current_hub and conn.zone1 == next_hub:
+            elif conn.zone_two == current_hub and conn.zone_one == next_hub:
                 return conn.available_drones
         return -1
 
@@ -262,12 +262,12 @@ class GraphBuilder:
         Returns:
             None
         """
-        self.reset_start_hub()
-        self.reset_end_hub()
-        self.reset_regular_hubs()
-        self.reset_connections()
+        self.__reset_start_hub()
+        self.__reset_end_hub()
+        self.__reset_regular_hubs()
+        self.__reset_connections()
 
-    def reset_start_hub(self) -> None:
+    def __reset_start_hub(self) -> None:
         """reset start_hub capacity
 
         Args:
@@ -278,7 +278,7 @@ class GraphBuilder:
         start_hub = self.get_start_hub()
         start_hub.available_drones = start_hub.metadata['max_drones']
 
-    def reset_end_hub(self) -> None:
+    def __reset_end_hub(self) -> None:
         """Reset end_hub capacity
 
         Args:
@@ -289,7 +289,7 @@ class GraphBuilder:
         end_hub = self.get_end_hub()
         end_hub.available_drones = end_hub.metadata['max_drones']
 
-    def reset_regular_hubs(self) -> None:
+    def __reset_regular_hubs(self) -> None:
         """resert regular hubs capacities
 
         Args:
@@ -300,7 +300,7 @@ class GraphBuilder:
         for hub in self.get_regular_hubs():
             hub.available_drones = hub.metadata['max_drones']
 
-    def reset_connections(self) -> None:
+    def __reset_connections(self) -> None:
         """reste connections capacities
 
         Args:

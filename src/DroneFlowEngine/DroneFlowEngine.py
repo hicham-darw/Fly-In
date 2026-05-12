@@ -175,6 +175,7 @@ class DroneFlowEngine:
         next_hub = self.__graph.get_hub_by_name(next_hub_name)
         if current_hub is None or next_hub is None:
             return None
+
         conn = self.__graph.get_connection_by_names(
             current_hub.name, next_hub.name
         )
@@ -187,8 +188,9 @@ class DroneFlowEngine:
             drone_in_conn = conn.drones.pop(0)
             if drone_in_conn.can_move_to_next_hub() is True:
                 next_hub.drones.append(drone_in_conn)
-                text_move = 'D' + str(drone_in_conn.get_drone_id())
-                text_move += '-' + next_hub.name + ' '
+                text_move = self.__move_format(
+                    str(drone_in_conn.get_drone_id()), next_hub.name
+                )
                 Visualizer.colored_print(
                     text_move, next_hub.metadata['color'], None
                 )
@@ -201,9 +203,22 @@ class DroneFlowEngine:
         drone = current_hub.drones.pop(0)
         if drone.can_move_to_next_hub() is True:
             conn.drones.append(drone)
-            text_move = 'D' + str(drone.get_drone_id())
-            text_move += '-' + conn.zone1 + '-' + conn.zone2 + ' '
+            text_move = self.__move_format(
+                str(drone.get_drone_id()),
+                conn.zone_one + '-' + conn.zone_two
+            )
             Visualizer.colored_print(text_move, "white", "connection")
+
+    def __move_format(self, drone_id: str, hub_name: str) -> str:
+        """this prepare format output of drone move
+
+        Args:
+            drone_id: (str): drone id as string
+            hub_name: (str): name of next_hub
+        Returns:
+            new_str: (str): output format
+        """
+        return 'D' + drone_id + '-' + hub_name + ' '
 
     def move_drone_has_not_restricted_zone(
         self, current_hub_name: str, next_hub_name: str
@@ -217,7 +232,6 @@ class DroneFlowEngine:
         Returns:
             None
         """
-
         current_hub = self.__graph.get_hub_by_name(current_hub_name)
         next_hub = self.__graph.get_hub_by_name(next_hub_name)
         if current_hub is None or next_hub is None:
@@ -232,8 +246,9 @@ class DroneFlowEngine:
             return
         if drone.can_move_to_next_hub() is True:
             next_hub.drones.append(drone)
-            text_move = 'D' + str(drone.get_drone_id())
-            text_move += '-' + next_hub.name + ' '
+            text_move = self.__move_format(
+                str(drone.get_drone_id()), next_hub.name
+            )
             Visualizer.colored_print(
                 text_move, next_hub.metadata['color'], None
             )

@@ -5,12 +5,25 @@ from src.Drone.Drone import Drone
 
 
 class HubMetadata(TypedDict):
+    """HubMetadata custom dictionary
+        contain specific data
+
+    Attributes:
+        zone: (TypeZone): type zone of hub
+        color: (str | None): color of hub
+        max_drones: int: hub how can take number of drones
+    """
     zone: TypeZone
     color: str | None
     max_drones: int
 
 
 class ConnectionMetadata(TypedDict):
+    """ConnectionMetadata custom dictionary
+        contain specific data
+    Attributes:
+        max_link_capacity: (int): max_link can traverse in connetcion
+    """
     max_link_capacity: int
 
 
@@ -45,20 +58,36 @@ class Connection:
         metadata: Optional metadata associated with the connection.
     """
 
-    zone1: str
-    zone2: str
+    zone_one: str
+    zone_two: str
     metadata: ConnectionMetadata
     available_drones: int = 0
     drones: list[Drone] = field(default_factory=list)
 
 
 class PathsAndFlow(TypedDict):
+    """custom dictionary represent path and flow and turns
+
+    Attributes:
+        path: (list[str]): path to end_hub
+        flow: (int): many drones can move in this path
+        turns: (int): how can take turns to reach to end_hub
+    """
     path: list[str]
     flow: int
     turns: int
 
 
 class ParsedData(TypedDict):
+    """custom dictionary represent parsed data
+
+    Attributes:
+        nb_drones: (int): number of drones
+        start_hub: (Hub): start hub
+        end_hub: (Hub): end_hub
+        hubs: (list[Hub]): regular hubs
+        connections: (list[Connection]): connections or vertices between hubs
+    """
     nb_drones: int
     start_hub: Hub
     end_hub: Hub

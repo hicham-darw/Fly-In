@@ -5,7 +5,9 @@ from src.DataClasses.DataClasses import PathsAndFlow
 
 
 class EdmondsKarpAlgo(Algo):
-
+    """class EdmondsKarpAlgo inherit from class Algo
+        now work on graph only
+    """
     def __init__(self, graph: GraphBuilder) -> None:
         """Constructor algo Edmonds-karp for calcul drones flow
 
@@ -16,7 +18,7 @@ class EdmondsKarpAlgo(Algo):
         """
         super().__init__(graph)
 
-    def get_max_flow(self, path_to_exit: list[str]) -> int:
+    def __get_max_flow(self, path_to_exit: list[str]) -> int:
         """Return the minimum flow along a path to the exit.
 
         Args:
@@ -26,30 +28,39 @@ class EdmondsKarpAlgo(Algo):
         """
         flow = 0
         for i in range(len(path_to_exit) - 1):
-            first = path_to_exit[i]
-            second = path_to_exit[i + 1]
-            flow_conn = self._graph.get_flow_connection(first, second)
+            flow_conn = self._graph.get_flow_connection(
+                path_to_exit[i], path_to_exit[i + 1]
+            )
             next_hub = self._graph.get_hub_by_name(path_to_exit[i + 1])
             if next_hub is None:
                 break
-            flow_hub = next_hub.available_drones
 
+            flow_hub = next_hub.available_drones
             if flow_conn == -1 or flow_hub == -1:
                 break
 
-            if flow_hub < flow_conn:
-                if i == 0:
-                    flow = flow_hub
-                elif flow > flow_hub:
-                    flow = flow_hub
-            else:
-                if i == 0:
-                    flow = flow_conn
-                elif flow > flow_conn:
-                    flow = flow_conn
+            new_flow = self.__get_new_flow(flow_conn, flow_hub)
+            if i == 0:
+                flow = new_flow
+            elif flow > new_flow:
+                flow = new_flow
+
         return flow
 
-    def update_flow_network(self, path: list[str], flow: int) -> None:
+    def __get_new_flow(self, flow_conn: int, flow_hub: int) -> int:
+        """get new flow between flow conn anf flow hub
+
+        Args:
+            flow_conn: (int): flow in connection
+            flow_hub: (int): flow in hub
+        Returns:
+            new_flow: (int): the smallest between them
+        """
+        if flow_hub < flow_conn:
+            return flow_hub
+        return flow_conn
+
+    def __update_flow_network(self, path: list[str], flow: int) -> None:
         """ update_flow_network
             update available_drones in hub and connection
 
@@ -60,9 +71,9 @@ class EdmondsKarpAlgo(Algo):
             None
         """
         for index in range(len(path) - 1):
-            first = path[index]
-            second = path[index + 1]
-            connection = self._graph.get_connection_by_names(first, second)
+            connection = self._graph.get_connection_by_names(
+                path[index], path[index + 1]
+            )
             next_hub = self._graph.get_hub_by_name(path[index + 1])
             if next_hub is None:
                 break
@@ -70,7 +81,7 @@ class EdmondsKarpAlgo(Algo):
             if connection:
                 connection.available_drones -= flow
 
-    def count_turns_in_path(self, path: list[str]) -> int:
+    def __count_turns_in_path(self, path: list[str]) -> int:
         """how paths take turns ro reach goal hub
 
         Args:
@@ -92,7 +103,7 @@ class EdmondsKarpAlgo(Algo):
                 number_of_turns += 1
         return number_of_turns
 
-    def create_bfs_algorithm(self) -> BreadthFirstSearch:
+    def __create_bfs_algorithm(self) -> BreadthFirstSearch:
         """reaturn object algorithm of breadth first search
         Args:
             None
@@ -101,7 +112,6 @@ class EdmondsKarpAlgo(Algo):
         """
         return BreadthFirstSearch(self._graph)
 
-    #  should be set breadth first search required !!
     def run(self) -> list[PathsAndFlow]:
         """run method execute algorithm on graph to find
             paths and flow
@@ -112,7 +122,7 @@ class EdmondsKarpAlgo(Algo):
             list[PathAndFlow] : list contain dictionary of paths and flow..
         """
         all_paths: list[PathsAndFlow] = list()
-        bfs = self.create_bfs_algorithm()
+        bfs = self.__create_bfs_algorithm()
 
         while True:
 
@@ -121,12 +131,12 @@ class EdmondsKarpAlgo(Algo):
                 all_paths = sorted(all_paths, key=lambda x: x['turns'])
                 return all_paths
 
-            flow_path = self.get_max_flow(path_to_goal)
+            flow_path = self.__get_max_flow(path_to_goal)
 
-            number_of_turns_in_path = self.count_turns_in_path(path_to_goal)
+            number_of_turns_in_path = self.__count_turns_in_path(path_to_goal)
             all_paths.append({
                 'path': path_to_goal,
                 'flow': flow_path,
                 'turns': number_of_turns_in_path
             })
-            self.update_flow_network(path_to_goal, flow_path)
+            self.__update_flow_network(path_to_goal, flow_path)

@@ -4,6 +4,7 @@ from src.DataClasses.DataClasses import ConnectionMetadata
 from src.Exceptions.ParsingError import ParsingError
 from src.DataClasses.DataClasses import Hub, Connection
 from src.Enums.Enums import TypeZone, MetaDataOfHub, MetaDataOfConnection
+from src.FactoryMetadata.FactoryMetadata import FactoryMetadata
 
 
 class Parser:
@@ -30,6 +31,7 @@ class Parser:
         self.name_zones: list[str] = list()
         self.count_start_hub = 0
         self.count_end_hub = 0
+        self.coordinates: list[tuple[int, int]] = list()
 
     def parse(self) -> ParsedData:
         """ parse content file and return dictionary of data
@@ -53,33 +55,6 @@ class Parser:
         except IsADirectoryError:
             print(f"Error: {self.filename} is a directory!.")
         exit(42)
-
-    # getters
-    def get_default_metadata_of_hub(self) -> HubMetadata:
-        """this method return default metadata of hub
-
-        Args:
-            None
-        Returns:
-            dictionary default metadata of hub
-        """
-        return {
-            MetaDataOfHub.zone.name: TypeZone.normal,
-            MetaDataOfHub.color.name: None,
-            MetaDataOfHub.max_drones.name: 1
-        }
-
-    def get_default_metadata_of_connection(self) -> ConnectionMetadata:
-        """method return default metadata of connection
-
-        Args:
-            None
-        Returns:
-            dictionary : default metadata of connection
-        """
-        return {
-            MetaDataOfConnection.max_link_capacity.name: 1
-        }
 
     def parse_number_of_drones(self, line: str) -> None:
         """Parse the number of drones from a line.
@@ -119,10 +94,17 @@ class Parser:
             )
             line_without_bracket = line[:start_bracket].rstrip()
         else:
-            metadata = self.get_default_metadata_of_hub()
+            metadata = FactoryMetadata.get_metadata_of_hub()
             line_without_bracket = line.rstrip()
 
         data_of_hub = line_without_bracket.split()
+        if self.__not_a_unique_coordinates(
+            (int(data_of_hub[2]), int(data_of_hub[3])),
+            data_of_hub[0][:-1]
+        ):
+            raise ParsingError(
+                "start_hub and end_hub has same coordinates"
+            )
         self.create_new_hub(
             type_zone=data_of_hub[0][:-1],
             name=data_of_hub[1],
@@ -130,6 +112,26 @@ class Parser:
             y=int(data_of_hub[3]),
             metadata=metadata
         )
+
+    def __not_a_unique_coordinates(
+        self, coord: tuple[int, int], type_zone: str
+    ) -> bool:
+        """ check start and end hub is has different coordinates or not
+            if regular hub skipped
+        Args:
+            coord: (tuple[int, int]): tuple coordinate x and y of hub
+            type_zone: (str): type_of_zone
+        Retuns:
+            boolean: if regular hub or not found coord in self.courdinates
+                return False
+            otherwise return True
+        """
+        if type_zone == 'hub':
+            return False
+        if coord in self.coordinates:
+            return True
+        self.coordinates.append(coord)
+        return False
 
     def parse_metadata_of_hub(self, data: str) -> HubMetadata:
         """Parse hub metadata from a bracketed block.
@@ -141,7 +143,7 @@ class Parser:
         Returns:
             A dictionary containing parsed metadata values.
         """
-        metadata: HubMetadata = self.get_default_metadata_of_hub()
+        metadata: HubMetadata = FactoryMetadata.get_metadata_of_hub()
         data = data[1:-1]
         if not data:
             return metadata
@@ -215,7 +217,8 @@ class Parser:
                 f"line: {line} Doesn't match syntax of connection."
             )
 
-        metadata = self.get_default_metadata_of_connection()
+        metadata: ConnectionMetadata =\
+            FactoryMetadata.get_metadata_of_connection()
         start_bracket = line.find('[')
         if start_bracket > -1:
             metadata = self.parse_metadata_of_connection(line[start_bracket:])
@@ -241,7 +244,8 @@ class Parser:
         Raises:
             ParsingError: If metadata syntax or values are invalid.
         """
-        metadata = self.get_default_metadata_of_connection()
+        metadata: ConnectionMetadata =\
+            FactoryMetadata.get_metadata_of_connection()
         data = data[1:-1]
         if len(data.split()) != 1:
             raise ParsingError("metadata connection must contain 1 argument")
@@ -312,9 +316,9 @@ class Parser:
         if len(names) != 2:
             raise ParsingError(f"{names_hub} doesn't match syntax!")
         for conn in self.connections:
-            if conn.zone1 == names[0] and conn.zone2 == names[1]:
+            if conn.zone_one == names[0] and conn.zone_two == names[1]:
                 raise ParsingError("connection must not appear more than once")
-            elif conn.zone2 == names[0] and conn.zone1 == names[1]:
+            elif conn.zone_two == names[0] and conn.zone_one == names[1]:
                 raise ParsingError("connection must not appear more than once")
 
         if names[0] not in self.get_all_hubs_name():

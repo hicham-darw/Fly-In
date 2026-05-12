@@ -2,7 +2,9 @@ SYS_PYTHON = python3
 PYTHON = ./.venv/bin/python3
 PIP = ./.venv/bin/pip
 VENV = .venv
-PATH_TO_MAP = ./maps/custom/custom.txt
+PATH_TO_MAP = ./maps/challenger/01_the_impossible_dream.txt
+FLAKE8 = ./.venv/bin/flake8
+MYPY = ./.venv/bin/mypy
 
 .PHONY: install run debug clean lint lint-strict
 
@@ -21,9 +23,9 @@ clean:
 	rm -f *.pyc */*.pyc */*/*.pyc *.pyo */*.pyo */*/*.pyo
 
 lint:
-	flake8 .
-	mypy . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
+	$(FLAKE8) .
+	$(MYPY) . --warn-return-any --warn-unused-ignores --ignore-missing-imports --disallow-untyped-defs --check-untyped-defs
 
 lint-strict:
-	flake8 .
-	mypy . --strict
+	$(FLAKE8) .
+	$(MYPY) . --strict
