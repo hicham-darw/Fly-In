@@ -4,7 +4,9 @@ from src.Enums.Enums import TypeZone
 
 
 class GraphBuilder:
-
+    """graph builder build graph with parsed data from parser
+        is a builder :)
+    """
     def build_start_hub(self, start_hub: Hub) -> Self:
         """setter method set start_hub
 
