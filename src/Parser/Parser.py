@@ -329,7 +329,8 @@ class Parser:
 
     def get_all_hubs_name(self) -> list[str]:
         """get names of hub already created
-
+        Args:
+            None
         Returns:
             list[str]: [list contain all names of hubs]
         """
