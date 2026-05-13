@@ -76,7 +76,7 @@ class GraphBuilder:
             pos = self.get_position_in_adjacency_list(
                 conn.zone_one, self.__adjacency_list[conn.zone_two]
             )
-            self.__adjacency_list[conn.zone_one].insert(pos, conn.zone_two)
+            self.__adjacency_list[conn.zone_two].insert(pos, conn.zone_one)
         return self
 
     # getter methods

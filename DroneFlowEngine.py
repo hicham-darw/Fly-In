@@ -96,6 +96,8 @@ class DroneFlowEngine:
         self.set_drones_in_start_hub()
         self.__graph.reset_capacities()
         all_data: list[PathsAndFlow] = self.__algo.run()
+        for data in all_data:
+            print(data)
         if not all_data:
             print(
                 "Error: No path found! from start hub to end hub.",
