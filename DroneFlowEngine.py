@@ -60,7 +60,7 @@ class DroneFlowEngine:
         return drones
 
     # setter method
-    def set_drones_in_start_hub(self) -> None:
+    def __set_drones_in_start_hub(self) -> None:
         """set all drones to start_hub to start simulation
 
         Args:
@@ -93,7 +93,7 @@ class DroneFlowEngine:
         Returns:
             None
         """
-        self.set_drones_in_start_hub()
+        self.__set_drones_in_start_hub()
         self.__graph.reset_capacities()
         all_data: list[PathsAndFlow] = self.__algo.run()
         for data in all_data:
@@ -104,9 +104,9 @@ class DroneFlowEngine:
                 file=sys.stderr
             )
             sys.exit(42)
-        self.start_simulation(all_data)
+        self.__start_simulation(all_data)
 
-    def not_reaches_goal(self) -> bool:
+    def __not_reaches_goal(self) -> bool:
         """check every simulation id all drones reaches to goal hub
 
         Args:
@@ -120,17 +120,17 @@ class DroneFlowEngine:
             return True
         return False
 
-    def start_simulation(
+    def __start_simulation(
         self, all_data: list[PathsAndFlow]
     ) -> None:
         """start routing drones in between hubs
         Args:
             all_data (list[PathsAndFlow]): [contains path flow and turns]
         """
-        while self.not_reaches_goal():
-            self.simulate_turn(all_data)
+        while self.__not_reaches_goal():
+            self.__simulate_turn(all_data)
 
-    def simulate_turn(self, all_data: list[PathsAndFlow]) -> None:
+    def __simulate_turn(self, all_data: list[PathsAndFlow]) -> None:
         """ function simulate 1 turn move all_drones from current_hub to next
 
         Args:
@@ -146,14 +146,14 @@ class DroneFlowEngine:
 
             i = len(path) - 2
             while i >= 0:
-                self.move_drones_to_next_hub(path[i], path[i + 1], flow)
+                self.__move_drones_to_next_hub(path[i], path[i + 1], flow)
                 i -= 1
-        sleep(0.8)
+        sleep(0.3)
         print()
-        self.reset_all_drones_can_move()
+        self.__reset_all_drones_can_move()
         self.turns_simulation += 1
 
-    def reset_all_drones_can_move(self) -> None:
+    def __reset_all_drones_can_move(self) -> None:
         """reset drones after each move can move now
 
         Args:
@@ -164,7 +164,7 @@ class DroneFlowEngine:
         for drone in self.__drones:
             drone.set_is_moved_in_turn(False)
 
-    def move_drone_has_restricted_zone(
+    def __move_drone_has_restricted_zone(
         self,
         current_hub_name: str,
         next_hub_name: str
@@ -230,7 +230,7 @@ class DroneFlowEngine:
         """
         return 'D' + drone_id + '-' + hub_name + ' '
 
-    def move_drone_has_not_restricted_zone(
+    def __move_drone_has_not_restricted_zone(
         self, current_hub_name: str, next_hub_name: str
     ) -> None:
         """move drones is normal or preferred zone cost 1 move
@@ -265,7 +265,7 @@ class DroneFlowEngine:
             if next_hub == self.__graph.get_end_hub():
                 drone.set_can_move(False)
 
-    def move_drones_to_next_hub(
+    def __move_drones_to_next_hub(
         self, current_hub_name: str, next_hub_name: str, flow: int
     ) -> None:
         """like manager count how many drones can fly to next hub
@@ -280,11 +280,11 @@ class DroneFlowEngine:
         while flow:
             if next_hub and next_hub.metadata[MetaDataOfHub.zone.name].value\
                     == TypeZone.restricted.value:
-                self.move_drone_has_restricted_zone(
+                self.__move_drone_has_restricted_zone(
                     current_hub_name, next_hub_name
                 )
             else:
-                self.move_drone_has_not_restricted_zone(
+                self.__move_drone_has_not_restricted_zone(
                     current_hub_name, next_hub_name
                 )
             flow -= 1

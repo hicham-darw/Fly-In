@@ -41,5 +41,5 @@ class Visualizer:
         print(colored, end='', flush=True)
         for c in msg:
             print(c, end='', flush=True)
-            sleep(0.016)
+            sleep(0.01)
         print('\033[0m\033[25m', end='', flush=True)

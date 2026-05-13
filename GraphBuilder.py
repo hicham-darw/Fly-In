@@ -219,24 +219,6 @@ class GraphBuilder:
                     return hub.metadata.get('zone')
         return None
 
-    def build(
-        self,
-        graph_data: dict[str, list[Hub] | Hub | int | list[Connection]]
-    ) -> None:
-        """build my graph object step by step
-
-        Args:
-            dictionary (dict): all_parsed_data from parser
-            nb_drones: int: number of drones
-            start_hub: Hub: start all drones
-            end_hub: Hub: all drones target this hub
-            hubs: list[hub]: hubs between start and end can has no \
-                    connection between other hubs
-            connections: list[Connection]: edges between two hubs
-        Returns:
-            None
-        """
-
     # getters method
     def get_flow_connection(self, current_hub: str, next_hub: str) -> int:
         """getter method

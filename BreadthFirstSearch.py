@@ -40,8 +40,10 @@ class BreadthFirstSearch(Algo):
             if current == self._graph.get_end_hub().name:
                 self.__reinitialize_data()
                 return path
-
-            for neighbor in self._graph.get_adjacency_list()[current]:
+            neighbors = self._graph.get_adjacency_list().get(current, None)
+            if neighbors is None:
+                continue
+            for neighbor in neighbors:
                 if self.__is_blocked_zone(neighbor):
                     continue
 

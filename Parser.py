@@ -1,12 +1,12 @@
 import re
 from DataClasses import ParsedData, HubMetadata
 from DataClasses import ConnectionMetadata
-from ParsingError import ParsingError, TypeZoneError, \
-    ColorZoneError, MaxDronesError, MaxLinkCapacityError, \
-    KeyMetadataError, KeyValMetadataError, ValueNbDronesError, \
-    InvalidFirstLineError, SyntaxLineError, PrefixError, \
-    DuplicateNbDronesError, DuplicateConnectionError, DuplicateNameHub, \
-    DuplicateCoordintesError, NotFoundNameHubError
+from ParsingError import ParsingError, SyntaxLineError, \
+    InvalidFirstLineError, DuplicateNbDronesError, DuplicateConnectionError, \
+    DuplicateNameHub, DuplicateCoordintesError, NotFoundNameHubError, \
+    ValueNbDronesError, PrefixError, KeyMetadataError, ValueTypeZoneError, \
+    ValueColorZoneError, ValueMaxDronesError, ValueMaxLinkCapacityError, \
+    KeyValMetadataError
 from DataClasses import Hub, Connection
 from Enums import TypeZone, MetaDataOfHub, MetaDataOfConnection
 from FactoryMetadata import FactoryMetadata
@@ -52,7 +52,7 @@ class Parser:
             Dictionary: parsed data (nb_drones - hubs - connection) or None
         """
         try:
-            self.parse_content_file()
+            self.__parse_content_file()
             return self.get_parsed_data()
         except ParsingError as e:
             print(e, file=stderr)
@@ -108,7 +108,7 @@ class Parser:
 
         start_bracket = self.current_line.find('[')
         if start_bracket != -1:
-            metadata: HubMetadata = self.parse_metadata_of_hub(
+            metadata: HubMetadata = self.__parse_metadata_of_hub(
                 self.current_line[start_bracket:]
             )
             line_without_bracket = self.current_line[:start_bracket].rstrip()
@@ -147,7 +147,7 @@ class Parser:
         self.coordinates.append(coord)
         return False
 
-    def parse_metadata_of_hub(self, data: str) -> HubMetadata:
+    def __parse_metadata_of_hub(self, data: str) -> HubMetadata:
         """Parse hub metadata from a bracketed block.
 
         Args:
@@ -164,13 +164,13 @@ class Parser:
 
         for pairs in data.split():
             key_val_data = pairs.split('=')
-            metadata = self.parse_each_pair_in_metadata_of_hub(
+            metadata = self.__parse_each_pair_in_metadata_of_hub(
                 key_val_data, metadata
             )
 
         return metadata
 
-    def parse_each_pair_in_metadata_of_hub(
+    def __parse_each_pair_in_metadata_of_hub(
         self, key_val_data: list[str], metadata: HubMetadata
     ) -> HubMetadata:
         """method parse each pair in metadata otherwise raise an exception
@@ -190,23 +190,23 @@ class Parser:
             if key_val_data[1] in [e.name for e in TypeZone]:
                 metadata[MetaDataOfHub.zone.name] = TypeZone[key_val_data[1]]
             else:
-                raise TypeZoneError(self.current_line, self.line_number)
+                raise ValueTypeZoneError(self.current_line, self.line_number)
         elif key_val_data[0].lower() == MetaDataOfHub.color.name:
             if key_val_data[1].isalpha():
                 metadata[MetaDataOfHub.color.name] = key_val_data[1].lower()
             else:
-                raise ColorZoneError(self.current_line, self.line_number)
+                raise ValueColorZoneError(self.current_line, self.line_number)
         elif key_val_data[0].lower() == MetaDataOfHub.max_drones.name:
             try:
                 metadata[MetaDataOfHub.max_drones.name] = int(key_val_data[1])
             except ValueError:
-                raise MaxDronesError(self.current_line, self.line_number)
+                raise ValueMaxDronesError(self.current_line, self.line_number)
         else:
             raise KeyMetadataError(self.current_line, self.line_number)
 
         max_drones = metadata[MetaDataOfHub.max_drones.name]
         if max_drones < 0:
-            raise MaxDronesError(self.current_line, self.line_number)
+            raise ValueMaxDronesError(self.current_line, self.line_number)
         return metadata
 
     def __parse_connection(self) -> None:
@@ -233,13 +233,13 @@ class Parser:
             FactoryMetadata.get_metadata_of_connection()
         start_bracket = self.current_line.find('[')
         if start_bracket > -1:
-            metadata = self.parse_metadata_of_connection(
+            metadata = self.__parse_metadata_of_connection(
                 self.current_line[start_bracket:]
             )
             self.current_line = self.current_line[:start_bracket]
         splitted = self.current_line.split()
 
-        names_hub = self.is_valid_names_in_connection(splitted[1])
+        names_hub = self.__is_valid_names_in_connection(splitted[1])
         self.connections.append(
             Connection(
                 names_hub[0],
@@ -248,7 +248,7 @@ class Parser:
             )
         )
 
-    def parse_metadata_of_connection(self, data: str) -> ConnectionMetadata:
+    def __parse_metadata_of_connection(self, data: str) -> ConnectionMetadata:
         """Parse connection metadata from a bracketed block.
 
         Args:
@@ -267,13 +267,19 @@ class Parser:
                 raise KeyValMetadataError(self.current_line, self.line_number)
 
             if pairs[0] != MetaDataOfConnection.max_link_capacity.name:
-                raise KeyMetadataError(self.current_line, self.line_number)
+                raise KeyMetadataError(
+                    self.current_line, self.line_number
+                )
             try:
                 max_capacity = int(pairs[1])
             except ValueError:
-                raise MaxLinkCapacityError(self.current_line, self.line_number)
+                raise ValueMaxLinkCapacityError(
+                    self.current_line, self.line_number
+                )
             if max_capacity < 0:
-                raise MaxLinkCapacityError(self.current_line, self.line_number)
+                raise ValueMaxLinkCapacityError(
+                    self.current_line, self.line_number
+                )
             metadata[MetaDataOfConnection.max_link_capacity.name]\
                 = int(pairs[1])
         return metadata
@@ -310,9 +316,9 @@ class Parser:
             self.end_hub.metadata['max_drones'] = self.nb_drones
         else:
             self.hubs.append(new_hub)
-        self.add_name_to_name_zones(new_hub.name)
+        self.__add_name_to_name_zones(new_hub.name)
 
-    def is_valid_names_in_connection(self, names_hub: str) -> list[str]:
+    def __is_valid_names_in_connection(self, names_hub: str) -> list[str]:
         """validate names in connection if exist name in hubs
             otherwise raise Parsing Error
 
@@ -335,13 +341,13 @@ class Parser:
                     self.current_line, self.line_number
                 )
 
-        if names[0] not in self.get_all_hubs_name():
+        if names[0] not in self.__get_all_hubs_name():
             raise NotFoundNameHubError(self.current_line, self.line_number)
-        elif names[1] not in self.get_all_hubs_name():
+        elif names[1] not in self.__get_all_hubs_name():
             raise NotFoundNameHubError(self.current_line, self.line_number)
         return names
 
-    def get_all_hubs_name(self) -> list[str]:
+    def __get_all_hubs_name(self) -> list[str]:
         """get names of hub already created
         Args:
             None
@@ -361,7 +367,7 @@ class Parser:
             hubs.append(hub.name)
         return hubs
 
-    def add_name_to_name_zones(self, new_name: str) -> None:
+    def __add_name_to_name_zones(self, new_name: str) -> None:
         """add name to name_zones for each hib has a unique name
 
         Args:
@@ -390,7 +396,7 @@ class Parser:
         else:
             return line.strip()
 
-    def is_completed_data(self) -> None:
+    def __is_completed_data(self) -> None:
         """if required data not initialized before or not change flag readline
 
         Args:
@@ -422,7 +428,7 @@ class Parser:
                 self.current_line, self.line_number, "file is empty."
             )
 
-    def parse_content_file(self) -> None:
+    def __parse_content_file(self) -> None:
         """Read and parse the configured input file.
 
         Args:
@@ -451,7 +457,7 @@ class Parser:
                     self.__parse_connection()
                 else:
                     raise PrefixError(self.current_line, self.line_number)
-        self.is_completed_data()
+        self.__is_completed_data()
 
     def get_parsed_data(self) -> ParsedData:
         """get all data need for graph like:
