@@ -1,13 +1,13 @@
 import sys
 from time import sleep
 
-from src.DataClasses.DataClasses import ParsedData, PathsAndFlow
-from src.Drone.Drone import Drone
-from src.Enums.Enums import TypeZone
-from src.GraphBuilder.GraphBuilder import GraphBuilder
-from src.Enums.Enums import MetaDataOfHub
-from src.Algorithms.EdmondsKarpAlgo import EdmondsKarpAlgo
-from src.Visualizer.Visualizer import Visualizer
+from DataClasses import ParsedData, PathsAndFlow
+from Drone import Drone
+from Enums import TypeZone
+from GraphBuilder import GraphBuilder
+from Enums import MetaDataOfHub
+from EdmondsKarpAlgo import EdmondsKarpAlgo
+from Visualizer import Visualizer
 
 
 class DroneFlowEngine:
@@ -142,21 +142,25 @@ class DroneFlowEngine:
             path = all_data[index_data]['path']
             flow = all_data[index_data]['flow']
 
-            i = 0
-            while i < len(path) - 1:
-                next_hub = self.__graph.get_hub_by_name(path[i + 1])
-                if next_hub is None or next_hub.drones is None:
-                    break
-                i += 1
-            if i == len(path) - 1:
-                i -= 1
-
+            i = len(path) - 2
             while i >= 0:
                 self.move_drones_to_next_hub(path[i], path[i + 1], flow)
                 i -= 1
         sleep(0.8)
         print()
+        self.reset_all_drones_can_move()
         self.turns_simulation += 1
+
+    def reset_all_drones_can_move(self) -> None:
+        """reset drones after each move can move now
+
+        Args:
+            None
+        Returns:
+            None
+        """
+        for drone in self.__drones:
+            drone.set_is_moved_in_turn(False)
 
     def move_drone_has_restricted_zone(
         self,
@@ -186,8 +190,10 @@ class DroneFlowEngine:
             if next_hub.drones is None:
                 next_hub.drones = []
             drone_in_conn = conn.drones.pop(0)
-            if drone_in_conn.can_move_to_next_hub() is True:
+            if drone_in_conn.can_move_to_next_hub() is True\
+                    and drone_in_conn.get_is_moved_in_turn() is False:
                 next_hub.drones.append(drone_in_conn)
+                drone_in_conn.set_is_moved_in_turn(True)
                 text_move = self.__move_format(
                     str(drone_in_conn.get_drone_id()), next_hub.name
                 )
@@ -195,14 +201,16 @@ class DroneFlowEngine:
                     text_move, next_hub.metadata['color'], None
                 )
                 if next_hub == self.__graph.get_end_hub():
-                    drone_in_conn.set_cant_move()
+                    drone_in_conn.set_can_move(False)
 
         if not current_hub.drones:
             return
 
         drone = current_hub.drones.pop(0)
-        if drone.can_move_to_next_hub() is True:
+        if drone.can_move_to_next_hub() is True\
+                and drone.get_is_moved_in_turn() is False:
             conn.drones.append(drone)
+            drone.set_is_moved_in_turn(True)
             text_move = self.__move_format(
                 str(drone.get_drone_id()),
                 conn.zone_one + '-' + conn.zone_two
@@ -240,12 +248,12 @@ class DroneFlowEngine:
         if not current_hub.drones:
             return
 
-        try:
+        drone = current_hub.drones[0]
+        if drone.can_move_to_next_hub() is True\
+                and drone.get_is_moved_in_turn() is False:
             drone = current_hub.drones.pop(0)
-        except IndexError:
-            return
-        if drone.can_move_to_next_hub() is True:
             next_hub.drones.append(drone)
+            drone.set_is_moved_in_turn(True)
             text_move = self.__move_format(
                 str(drone.get_drone_id()), next_hub.name
             )
@@ -253,7 +261,7 @@ class DroneFlowEngine:
                 text_move, next_hub.metadata['color'], None
             )
             if next_hub == self.__graph.get_end_hub():
-                drone.set_cant_move()
+                drone.set_can_move(False)
 
     def move_drones_to_next_hub(
         self, current_hub_name: str, next_hub_name: str, flow: int

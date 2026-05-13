@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
-from src.GraphBuilder.GraphBuilder import GraphBuilder
+from GraphBuilder import GraphBuilder
 
 
 class Algo(ABC):

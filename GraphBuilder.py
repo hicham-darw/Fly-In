@@ -1,6 +1,6 @@
-from src.DataClasses.DataClasses import Hub, Connection
+from DataClasses import Hub, Connection
 from typing_extensions import Self
-from src.Enums.Enums import TypeZone
+from Enums import TypeZone
 
 
 class GraphBuilder:

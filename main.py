@@ -1,12 +1,12 @@
-from sys import exit, argv
-from src.DroneFlowEngine.DroneFlowEngine import DroneFlowEngine
-from src.Parser.Parser import Parser
+from sys import exit, argv, stderr
+from DroneFlowEngine import DroneFlowEngine
+from Parser import Parser
 
 if __name__ == '__main__':
 
     #  check argument.........!
     if len(argv) != 2:
-        print("Usage: python3 main.py <path to file>.")
+        print("Usage: python3 main.py <path to file>.", file=stderr)
         exit(42)
     parser = Parser(argv[1])
     parsed_data = parser.parse()

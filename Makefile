@@ -19,8 +19,7 @@ debug:
 	$(PYTHON) -m pdb main.py
 
 clean:
-	rm -rf __pycache__ */__pycache__ */*/__pycache__ .mypy_cache .pytest_cache
-	rm -f *.pyc */*.pyc */*/*.pyc *.pyo */*.pyo */*/*.pyo
+	rm -rf __pycache__  .mypy_cache .pytest_cache
 
 lint:
 	$(FLAKE8) .

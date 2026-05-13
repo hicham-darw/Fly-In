@@ -1,10 +1,11 @@
 import re
-from src.DataClasses.DataClasses import ParsedData, HubMetadata
-from src.DataClasses.DataClasses import ConnectionMetadata
-from src.Exceptions.ParsingError import ParsingError
-from src.DataClasses.DataClasses import Hub, Connection
-from src.Enums.Enums import TypeZone, MetaDataOfHub, MetaDataOfConnection
-from src.FactoryMetadata.FactoryMetadata import FactoryMetadata
+from DataClasses import ParsedData, HubMetadata
+from DataClasses import ConnectionMetadata
+from ParsingError import ParsingError
+from DataClasses import Hub, Connection
+from Enums import TypeZone, MetaDataOfHub, MetaDataOfConnection
+from FactoryMetadata import FactoryMetadata
+from sys import stderr
 
 
 class Parser:
@@ -47,13 +48,13 @@ class Parser:
             self.parse_content_file()
             return self.get_parsed_data()
         except ParsingError as e:
-            print(e)
+            print(e, file=stderr)
         except FileNotFoundError:
-            print(f"Error: {self.filename} not found!.")
+            print(f"Error: {self.filename} not found!.", file=stderr)
         except PermissionError:
-            print(f"Error: {self.filename} not permitted!.")
+            print(f"Error: {self.filename} not permitted!.", file=stderr)
         except IsADirectoryError:
-            print(f"Error: {self.filename} is a directory!.")
+            print(f"Error: {self.filename} is a directory!.", file=stderr)
         exit(42)
 
     def parse_number_of_drones(self, line: str) -> None:
@@ -393,7 +394,7 @@ class Parser:
                     "start_hub not Found!, please check your file."
                 )
         except AttributeError:
-            print("start_hub not found in map.")
+            print("start_hub not found in map.", file=stderr)
             exit(42)
         try:
             if self.end_hub is None:
@@ -401,7 +402,7 @@ class Parser:
                     "end_hub not Found!, please check your file."
                 )
         except AttributeError:
-            print("end_hub not found in map")
+            print("end_hub not found in map", file=stderr)
             exit(42)
         if self.first_line:
             raise ParsingError("file is empty or has only comments or spaces")

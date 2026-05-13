@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import TypedDict
-from src.Enums.Enums import TypeZone
-from src.Drone.Drone import Drone
+from Enums import TypeZone
+from Drone import Drone
 
 
 class HubMetadata(TypedDict):

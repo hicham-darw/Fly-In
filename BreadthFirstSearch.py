@@ -1,8 +1,8 @@
 from collections import deque
 from typing import Any
-from src.Algorithms.Algo import Algo
-from src.GraphBuilder.GraphBuilder import GraphBuilder
-from src.DataClasses.DataClasses import Hub, Connection
+from Algo import Algo
+from GraphBuilder import GraphBuilder
+from DataClasses import Hub, Connection
 
 
 class BreadthFirstSearch(Algo):

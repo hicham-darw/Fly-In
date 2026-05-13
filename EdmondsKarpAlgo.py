@@ -1,7 +1,7 @@
-from src.Algorithms.Algo import Algo
-from src.GraphBuilder.GraphBuilder import GraphBuilder
-from src.Algorithms.BreadthFirstSearch import BreadthFirstSearch
-from src.DataClasses.DataClasses import PathsAndFlow
+from Algo import Algo
+from GraphBuilder import GraphBuilder
+from BreadthFirstSearch import BreadthFirstSearch
+from DataClasses import PathsAndFlow
 
 
 class EdmondsKarpAlgo(Algo):

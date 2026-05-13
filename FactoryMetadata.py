@@ -1,5 +1,5 @@
-from src.DataClasses.DataClasses import HubMetadata, ConnectionMetadata
-from src.Enums.Enums import MetaDataOfHub, MetaDataOfConnection, TypeZone
+from DataClasses import HubMetadata, ConnectionMetadata
+from Enums import MetaDataOfHub, MetaDataOfConnection, TypeZone
 
 
 class FactoryMetadata:
