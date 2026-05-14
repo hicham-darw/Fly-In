@@ -10,7 +10,6 @@ MYPY = ./.venv/bin/mypy
 
 install:
 	$(SYS_PYTHON) -m venv $(VENV) 
-	$(SYS_PYTHON) -m pip install --upgrade pip
 	$(PIP) install -r requirements.txt
 
 run:
