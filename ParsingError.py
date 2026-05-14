@@ -9,9 +9,23 @@ class ParsingError(Exception):
         Returns:
             None
         """
-
+        self.red: str = "\033[1;31m"
         super().__init__(
-            f"\033[1;31mline {line_number}: '{line}' {error}."
+            f"{self.red}line {line_number}: \"{line}\" {error}."
+        )
+
+
+class NotFoundError(Exception):
+    """Raised when not found map requirements
+    """
+    def __init__(self, not_founded: str) -> None:
+        """Initializ not found requirements
+
+        Args:
+            not_founded: what requirement not found
+        """
+        super().__init__(
+            f"\033[1;31m{not_founded} not found!, please check map file."
         )
 
 
@@ -19,14 +33,57 @@ class ParsingError(Exception):
 class SyntaxLineError(ParsingError):
     """raised when a syntax line not valid
     """
-    def __init__(self, line: str, line_number: int) -> None:
+    def __init__(self, line: str, line_number: int, msg: str) -> None:
         """Initialize the syntax line error.
 
         Args:
             line: The invalid line content.
             line_number: The line number where the error occurred.
         """
-        super().__init__(line, line_number, "Inavalid format")
+        super().__init__(line, line_number, f"Inavalid format:\033[0m {msg}")
+
+
+class SyntaxHubError(SyntaxLineError):
+    """Raised when line hub is invalid format
+    """
+    def __init__(self, line: str, line_number: int) -> None:
+        """Initialize invalid syntax hub
+
+        Args:
+            line: The invalid line content.
+            line_number: The line number where the error occurred.
+        """
+        super().__init__(
+            line, line_number, "<prefix>: <name> <x> <y> [optional metadata]"
+        )
+
+
+class SyntaxConnectionError(SyntaxLineError):
+    """Raise when line connection is invalid format
+    """
+    def __init__(self, line: str, line_number: int) -> None:
+        """Initialize invalid syntax connection
+
+        Args:
+            line: The invalid line content.
+            line_number: The line number where the error occurred.
+        """
+        super().__init__(
+            line, line_number, "<prefix>: <hub1>-<hub2> [optional metadata]"
+        )
+
+
+class SyntaxDronesError(SyntaxLineError):
+    """Raised when line nb_drones is inavlid
+    """
+    def __init__(self, line: str, line_number: int) -> None:
+        """Initialize invalid syntax nb_drones
+
+        Args:
+            line: The invalid line content.
+            line_number: The line number where the error occurred.
+        """
+        super().__init__(line, line_number, "<prefix>: <number of drones>")
 
 
 class InvalidFirstLineError(ParsingError):
@@ -84,7 +141,7 @@ class DuplicateConnectionError(DuplicateError):
         super().__init__(line, line_number, "Connection")
 
 
-class DuplicateNameHub(ParsingError):
+class DuplicateNameHub(DuplicateError):
     """Raised when found name hub duplicated
     """
     def __init__(self, line: str, line_number: int) -> None:
@@ -107,10 +164,9 @@ class DuplicateCoordintesError(DuplicateError):
             line: The invalid line content.
             line_number: The line number where the error occurred.
         """
-        super().__init__(line, line_number, "coordintes")
+        super().__init__(line, line_number, "coordinates")
 
 
-# not found name in connection
 class NotFoundNameHubError(ParsingError):
     """Raised when name hub not found in hubs
     """
@@ -187,6 +243,9 @@ class ValueTypeZoneError(ParsingError):
     """
     def __init__(self, line: str, line_number: int) -> None:
         """initialize value type zone error
+        Args:
+            line: The invalid line content.
+            line_number: The line number where the error occurred.
         """
         super().__init__(line, line_number, " Invalid value of type zone")
 
@@ -214,7 +273,7 @@ class ValueMaxDronesError(ParsingError):
             line: The invalid line content.
             line_number: The line number where the error occurred.
         """
-        super().__init__(line, line_number, " Invallid value max drones")
+        super().__init__(line, line_number, " Invalid value max drones")
 
 
 class ValueMaxLinkCapacityError(ParsingError):

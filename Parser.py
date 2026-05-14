@@ -1,12 +1,12 @@
 import re
 from DataClasses import ParsedData, HubMetadata
 from DataClasses import ConnectionMetadata
-from ParsingError import ParsingError, SyntaxLineError, \
-    InvalidFirstLineError, DuplicateNbDronesError, DuplicateConnectionError, \
-    DuplicateNameHub, DuplicateCoordintesError, NotFoundNameHubError, \
-    ValueNbDronesError, PrefixError, KeyMetadataError, ValueTypeZoneError, \
-    ValueColorZoneError, ValueMaxDronesError, ValueMaxLinkCapacityError, \
-    KeyValMetadataError
+from ParsingError import ParsingError, SyntaxHubError, SyntaxConnectionError, \
+    SyntaxDronesError, InvalidFirstLineError, DuplicateNbDronesError, \
+    DuplicateConnectionError, DuplicateNameHub, DuplicateCoordintesError, \
+    NotFoundError, NotFoundNameHubError, ValueNbDronesError, PrefixError, \
+    KeyMetadataError, ValueTypeZoneError, ValueColorZoneError, \
+    ValueMaxDronesError, ValueMaxLinkCapacityError, KeyValMetadataError
 from DataClasses import Hub, Connection
 from Enums import TypeZone, MetaDataOfHub, MetaDataOfConnection
 from FactoryMetadata import FactoryMetadata
@@ -28,6 +28,7 @@ class Parser:
         Returns:
             None
         """
+        self.red = '\033[1;31m'
         self.hubs: list[Hub] = list()
         self.connections: list[Connection] = list()
 
@@ -56,12 +57,26 @@ class Parser:
             return self.get_parsed_data()
         except ParsingError as e:
             print(e, file=stderr)
+        except NotFoundError as e:
+            print(e, file=stderr)
         except FileNotFoundError:
-            print(f"Error: {self.filename} not found!.", file=stderr)
+            print(
+                f"{self.red}Error: {self.filename} not found!.", file=stderr
+            )
         except PermissionError:
-            print(f"Error: {self.filename} not permitted!.", file=stderr)
+            print(
+                f"{self.red}Error: {self.filename} not permitted!", file=stderr
+            )
         except IsADirectoryError:
-            print(f"Error: {self.filename} is a directory!.", file=stderr)
+            print(
+                f"{self.red}Error:",
+                f"{self.filename} is a directory!", file=stderr
+            )
+        except UnicodeDecodeError:
+            print(f"{self.red}Error: can't decode content file", file=stderr)
+        except Exception as e:
+            print(f"{self.red}Unexpected Error: you are a Great tester!")
+            print(e)
         exit(42)
 
     def __parse_number_of_drones(self) -> None:
@@ -80,7 +95,7 @@ class Parser:
 
         match = re.match(r"nb_drones: [-+]?(\d+)$", self.current_line)
         if not match:
-            raise SyntaxLineError(self.current_line, self.line_number)
+            raise SyntaxDronesError(self.current_line, self.line_number)
         try:
             self.nb_drones = int(match.group(1))
         except ValueError:
@@ -104,7 +119,7 @@ class Parser:
             self.current_line
         )
         if match is None:
-            raise SyntaxLineError(self.current_line, self.line_number)
+            raise SyntaxHubError(self.current_line, self.line_number)
 
         start_bracket = self.current_line.find('[')
         if start_bracket != -1:
@@ -167,7 +182,6 @@ class Parser:
             metadata = self.__parse_each_pair_in_metadata_of_hub(
                 key_val_data, metadata
             )
-
         return metadata
 
     def __parse_each_pair_in_metadata_of_hub(
@@ -183,7 +197,7 @@ class Parser:
         Returns:
             updated metadata if valid metadata
         """
-        if len(key_val_data) != 2:
+        if len(key_val_data) != 2 or not len(key_val_data[1]):
             raise KeyValMetadataError(self.current_line, self.line_number)
 
         if key_val_data[0].lower() == MetaDataOfHub.zone.name:
@@ -227,7 +241,7 @@ class Parser:
             r"^connection: [^ \-]+-[^ \-]+( \[.+\])?", self.current_line
         )
         if match is None:
-            raise SyntaxLineError(self.current_line, self.line_number)
+            raise SyntaxConnectionError(self.current_line, self.line_number)
 
         metadata: ConnectionMetadata =\
             FactoryMetadata.get_metadata_of_connection()
@@ -242,9 +256,7 @@ class Parser:
         names_hub = self.__is_valid_names_in_connection(splitted[1])
         self.connections.append(
             Connection(
-                names_hub[0],
-                names_hub[1],
-                metadata
+                names_hub[0], names_hub[1], metadata
             )
         )
 
@@ -263,7 +275,7 @@ class Parser:
         data = data[1:-1]
         for key_val_data in data.split():
             pairs = key_val_data.split('=')
-            if len(pairs) != 2:
+            if len(pairs) != 2 or len(pairs[1]) == 0:
                 raise KeyValMetadataError(self.current_line, self.line_number)
 
             if pairs[0] != MetaDataOfConnection.max_link_capacity.name:
@@ -276,6 +288,7 @@ class Parser:
                 raise ValueMaxLinkCapacityError(
                     self.current_line, self.line_number
                 )
+
             if max_capacity < 0:
                 raise ValueMaxLinkCapacityError(
                     self.current_line, self.line_number
@@ -409,24 +422,16 @@ class Parser:
         """
         try:
             if self.start_hub is None:
-                raise ParsingError(
-                    "start_hub not Found!, please check your file."
-                )
+                raise NotFoundError("start_hub")
         except AttributeError:
-            print("start_hub not found in map.", file=stderr)
-            exit(42)
+            raise NotFoundError("start_hub")
         try:
             if self.end_hub is None:
-                raise ParsingError(
-                    "end_hub not Found!, please check your file."
-                )
+                raise NotFoundError("end_hub")
         except AttributeError:
-            print("end_hub not found in map", file=stderr)
-            exit(42)
+            raise NotFoundError("end_hub")
         if self.first_line:
-            raise ParsingError(
-                self.current_line, self.line_number, "file is empty."
-            )
+            raise NotFoundError("nb_drones")
 
     def __parse_content_file(self) -> None:
         """Read and parse the configured input file.
@@ -447,11 +452,11 @@ class Parser:
                 if not len(self.current_line):
                     continue
 
-                if line.startswith("nb_drones"):
+                if line.startswith("nb_drones:"):
                     self.__parse_number_of_drones()
                     self.first_line = False
-                elif line.startswith("start_hub:") or line.startswith("hub")\
-                        or line.startswith('end_hub'):
+                elif line.startswith("start_hub:") or line.startswith("hub:")\
+                        or line.startswith('end_hub:'):
                     self.__parse_hub()
                 elif line.startswith("connection:"):
                     self.__parse_connection()
