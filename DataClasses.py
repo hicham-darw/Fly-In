@@ -61,8 +61,8 @@ class Connection:
     zone_one: str
     zone_two: str
     metadata: ConnectionMetadata
-    available_drones: int = 0
     drones: list[Drone] = field(default_factory=list)
+    available_drones: int = 0
 
 
 class PathsAndFlow(TypedDict):

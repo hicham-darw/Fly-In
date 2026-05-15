@@ -115,7 +115,7 @@ class Parser:
         if self.first_line:
             raise InvalidFirstLineError(self.current_line, self.line_number)
         match = re.match(
-            r"^(start_hub|end_hub|hub): [^ \-]+ [-+]?\d+ [-+]?\d+( \[.+\])?$",
+            r"^(start_hub|end_hub|hub): [^ \-]+ [-+]?\d+ [-+]?\d+( \[.*\])?$",
             self.current_line
         )
         if match is None:
@@ -238,7 +238,7 @@ class Parser:
             raise InvalidFirstLineError(self.current_line, self.line_number)
 
         match = re.match(
-            r"^connection: [^ \-]+-[^ \-]+( \[.+\])?", self.current_line
+            r"^connection: [^ \-]+-[^ \-]+( \[.*\])?", self.current_line
         )
         if match is None:
             raise SyntaxConnectionError(self.current_line, self.line_number)
