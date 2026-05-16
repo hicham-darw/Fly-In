@@ -73,6 +73,11 @@ class Parser:
             )
         except UnicodeDecodeError:
             print(f"{self.red}Error: can't decode content file", file=stderr)
+        except ValueError as e:
+            print(
+                f"{self.red}line {self.line_number}: \"{self.current_line}\"",
+                f"{e}"
+            )
         except Exception as e:
             print(f"{self.red}Unexpected Error: you are a Great tester!")
             print(e)
@@ -139,7 +144,6 @@ class Parser:
             y=int(data_of_hub[3]),
             metadata=metadata
         )
-
 
     def __parse_metadata_of_hub(self, data: str) -> HubMetadata:
         """Parse hub metadata from a bracketed block.
