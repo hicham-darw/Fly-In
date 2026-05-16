@@ -154,19 +154,6 @@ class DuplicateNameHub(DuplicateError):
         super().__init__(line, line_number, "name hub")
 
 
-class DuplicateCoordintesError(DuplicateError):
-    """Raised when found duplicated coordinates in all hubs
-    """
-    def __init__(self, line: str, line_number: int) -> None:
-        """Initialize Duplicate coordinates error.
-
-        Args:
-            line: The invalid line content.
-            line_number: The line number where the error occurred.
-        """
-        super().__init__(line, line_number, "coordinates")
-
-
 class NotFoundNameHubError(ParsingError):
     """Raised when name hub not found in hubs
     """

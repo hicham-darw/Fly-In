@@ -3,7 +3,7 @@ from DataClasses import ParsedData, HubMetadata
 from DataClasses import ConnectionMetadata
 from ParsingError import ParsingError, SyntaxHubError, SyntaxConnectionError, \
     SyntaxDronesError, InvalidFirstLineError, DuplicateNbDronesError, \
-    DuplicateConnectionError, DuplicateNameHub, DuplicateCoordintesError, \
+    DuplicateConnectionError, DuplicateNameHub, \
     NotFoundError, NotFoundNameHubError, ValueNbDronesError, PrefixError, \
     KeyMetadataError, ValueTypeZoneError, ValueColorZoneError, \
     ValueMaxDronesError, ValueMaxLinkCapacityError, KeyValMetadataError
@@ -40,7 +40,6 @@ class Parser:
         self.name_zones: list[str] = list()
         self.count_start_hub: int = 0
         self.count_end_hub: int = 0
-        self.coordinates: list[tuple[int, int]] = list()
 
     def parse(self) -> ParsedData:
         """ parse content file and return dictionary of data
@@ -132,10 +131,7 @@ class Parser:
             line_without_bracket = self.current_line.rstrip()
 
         data_of_hub = line_without_bracket.split()
-        if self.__not_a_unique_coordinates(
-            (int(data_of_hub[2]), int(data_of_hub[3])),
-        ):
-            raise DuplicateCoordintesError(self.current_line, self.line_number)
+
         self.create_new_hub(
             type_zone=data_of_hub[0][:-1],
             name=data_of_hub[1],
@@ -144,23 +140,6 @@ class Parser:
             metadata=metadata
         )
 
-    def __not_a_unique_coordinates(
-        self, coord: tuple[int, int]
-    ) -> bool:
-        """ check start and end hub is has different coordinates or not
-            if regular hub skipped
-        Args:
-            coord: (tuple[int, int]): tuple coordinate x and y of hub
-            type_zone: (str): type_of_zone
-        Retuns:
-            boolean: if regular hub or not found coord in self.courdinates
-                return False
-            otherwise return True
-        """
-        if coord in self.coordinates:
-            return True
-        self.coordinates.append(coord)
-        return False
 
     def __parse_metadata_of_hub(self, data: str) -> HubMetadata:
         """Parse hub metadata from a bracketed block.
