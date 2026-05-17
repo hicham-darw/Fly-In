@@ -94,17 +94,7 @@ class Parser:
         Returns:
             None
         """
-        if not self.first_line:
-            raise DuplicateNbDronesError(self.current_line, self.line_number)
-
-        match = re.match(r"nb_drones: [-+]?(\d+)$", self.current_line)
-        if not match:
-            raise SyntaxDronesError(self.current_line, self.line_number)
-        try:
-            self.nb_drones = int(match.group(1))
-        except ValueError:
-            raise ValueNbDronesError(self.current_line, self.line_number)
-
+        self.__is_valid_line('nb_drones')
         if self.nb_drones <= 0:
             ValueNbDronesError(self.current_line, self.line_number)
 
@@ -116,15 +106,7 @@ class Parser:
         Returns:
             None
         """
-        if self.first_line:
-            raise InvalidFirstLineError(self.current_line, self.line_number)
-        match = re.match(
-            r"^(start_hub|end_hub|hub): [^ \-]+ [-+]?\d+ [-+]?\d+( \[.*\])?$",
-            self.current_line
-        )
-        if match is None:
-            raise SyntaxHubError(self.current_line, self.line_number)
-
+        self.__is_valid_line("hub")
         start_bracket = self.current_line.find('[')
         if start_bracket != -1:
             metadata: HubMetadata = self.__parse_metadata_of_hub(
@@ -144,6 +126,89 @@ class Parser:
             y=int(data_of_hub[3]),
             metadata=metadata
         )
+
+    def __is_valid_line_nb_drones(self) -> None:
+        """valid line with format nb_drones and not first line
+
+        Args:
+            None
+        Raises:
+            InvalidFirstLineError: if is first line raised error
+            SyntaxDronesError:  if not a match format nb_drones
+            ValueNbDronesError: if not valid number of drones
+        Returns:
+            None
+        """
+        if not self.first_line:
+            raise DuplicateNbDronesError(self.current_line, self.line_number)
+        match = re.match(r"nb_drones: [-+]?(\d+)$", self.current_line)
+        if not match:
+            raise SyntaxDronesError(self.current_line, self.line_number)
+        try:
+            self.nb_drones = int(match.group(1))
+        except ValueError:
+            raise ValueNbDronesError(self.current_line, self.line_number)
+
+    def __is_valid_line_hub(self) -> None:
+        """validate line with format hub and not first line
+
+        Args:
+            None
+        Raises:
+            InvalidFirstLineError: if is first line raised error
+            SyntaxHubError: if not a match format connection
+        Returns:
+            None
+        """
+        if self.first_line:
+            raise InvalidFirstLineError(self.current_line, self.line_number)
+        match = re.match(
+            r"^(start_hub|end_hub|hub): [^ \-]+ [-+]?\d+ [-+]?\d+( \[.*\])?$",
+            self.current_line
+        )
+        if match is None:
+            raise SyntaxHubError(self.current_line, self.line_number)
+
+    def __is_valid_line_connection(self) -> None:
+        """validate line with format connection and not first line
+
+        Args:
+            None
+        Raises:
+            InvalidFirstLineError: if is first line raised error
+            SyntaxConnectionError:  if not a match format connection
+        Returns:
+            None
+        """
+        if self.first_line:
+            raise InvalidFirstLineError(self.current_line, self.line_number)
+
+        match = re.match(
+            r"^connection: [^ \-]+-[^ \-]+( \[.*\])?", self.current_line
+        )
+        if match is None:
+            raise SyntaxConnectionError(
+                self.current_line, self.line_number
+            )
+        return
+
+    def __is_valid_line(self, prefix_line: str) -> None:
+        """ validate line with not first line and and syntax is valid
+
+        Args:
+            None
+        Raises:
+            InvalidFirstLine: if hub is in firt line
+            SyntaxHubError: if line has invalid format
+        Returns:
+            None
+        """
+        if prefix_line == 'nb_drones':
+            return self.__is_valid_line_nb_drones()
+        elif prefix_line == 'hub':
+            return self.__is_valid_line_hub()
+        else:
+            return self.__is_valid_line_connection()
 
     def __parse_metadata_of_hub(self, data: str) -> HubMetadata:
         """Parse hub metadata from a bracketed block.
@@ -217,15 +282,7 @@ class Parser:
         Returns:
             None
         """
-        if self.first_line:
-            raise InvalidFirstLineError(self.current_line, self.line_number)
-
-        match = re.match(
-            r"^connection: [^ \-]+-[^ \-]+( \[.*\])?", self.current_line
-        )
-        if match is None:
-            raise SyntaxConnectionError(self.current_line, self.line_number)
-
+        self.__is_valid_line("connection")
         metadata: ConnectionMetadata =\
             FactoryMetadata.get_metadata_of_connection()
         start_bracket = self.current_line.find('[')
