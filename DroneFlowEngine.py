@@ -97,8 +97,8 @@ class DroneFlowEngine:
         self.__graph.reset_capacities()
         all_data: list[PathsAndFlow] = self.__algo.run()
         if not all_data:
-            print("Drones: not found Any path to target hub")
-            exit(42)
+            print("\033[32mDrones: not found Any path to target hub")
+            exit(0)
 
         self.__start_simulation(all_data)
 

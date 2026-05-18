@@ -87,7 +87,7 @@ class Parser:
         """Parse the number of drones from a line.
 
         Args:
-            line: Input line containing the drone count.
+            None
         Raises:
             ParsingError: If the line does not match the expected syntax or if
                 the value is not strictly positive.
@@ -96,13 +96,13 @@ class Parser:
         """
         self.__is_valid_line('nb_drones')
         if self.nb_drones <= 0:
-            ValueNbDronesError(self.current_line, self.line_number)
+            raise ValueNbDronesError(self.current_line, self.line_number)
 
     def __parse_hub(self) -> None:
         """parse hub if matches syntax and store it
 
         Args:
-            line: (str): stripped line
+            None
         Returns:
             None
         """
@@ -141,7 +141,7 @@ class Parser:
         """
         if not self.first_line:
             raise DuplicateNbDronesError(self.current_line, self.line_number)
-        match = re.match(r"nb_drones: [-+]?(\d+)$", self.current_line)
+        match = re.match(r"nb_drones: ([-+]?\d+)$", self.current_line)
         if not match:
             raise SyntaxDronesError(self.current_line, self.line_number)
         try:
@@ -238,7 +238,11 @@ class Parser:
             key_val_data: list[str]: list contain key and value
             metadata: dict: contains default values of metadata
         Raises:
-            ParsingError: If the data is invalid
+            KeyValMetadataError: when found metadata not (key=value)
+            KeyMetadataError: raised when unexpected key
+            ValueTypeZoneError: when Value of Type Zone not valid
+            ValueColorZoneError: when Value Color not a valid
+
         Returns:
             updated metadata if valid metadata
         """
@@ -262,20 +266,13 @@ class Parser:
                 raise ValueMaxDronesError(self.current_line, self.line_number)
         else:
             raise KeyMetadataError(self.current_line, self.line_number)
-
-        max_drones = metadata[MetaDataOfHub.max_drones.name]
-        if max_drones < 0:
-            raise ValueMaxDronesError(self.current_line, self.line_number)
         return metadata
 
     def __parse_connection(self) -> None:
         """Parse a connection definition.
 
         Args:
-            line: Input line defining a connection between two hubs.
-        Raises:
-            ParsingError: If the syntax is invalid, if a referenced hub does
-                not exist, or if the connection is malformed.
+            None
         Returns:
             None
         """
@@ -320,18 +317,12 @@ class Parser:
                     self.current_line, self.line_number
                 )
             try:
-                max_capacity = int(pairs[1])
+                metadata[MetaDataOfConnection.max_link_capacity.name]\
+                    = int(pairs[1])
             except ValueError:
                 raise ValueMaxLinkCapacityError(
                     self.current_line, self.line_number
                 )
-
-            if max_capacity < 0:
-                raise ValueMaxLinkCapacityError(
-                    self.current_line, self.line_number
-                )
-            metadata[MetaDataOfConnection.max_link_capacity.name]\
-                = int(pairs[1])
         return metadata
 
     def create_new_hub(
@@ -375,7 +366,8 @@ class Parser:
         Args:
             names_hub: str : contain two names separated by dash -
         Raises:
-            ParsingError if not a valid data
+            DuplicateConnectionError: if connection duplicated in file map
+            NotFoundNameHubError: not found hubs by these names
         Returns:
             return list[str] : list has two names froms hubs
         """
@@ -423,7 +415,7 @@ class Parser:
         Args:
             new_name: new_name of hub
         Raises:
-            ParsingError: if name already exists
+            DuplicateNameHub: if name already exists
         Returns:
             None
         """
