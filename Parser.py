@@ -133,7 +133,7 @@ class Parser:
         Args:
             None
         Raises:
-            InvalidFirstLineError: if is first line raised error
+            DuplicateNbDronesError: is duplicated nb_drones
             SyntaxDronesError:  if not a match format nb_drones
             ValueNbDronesError: if not valid number of drones
         Returns:
@@ -196,10 +196,7 @@ class Parser:
         """ validate line with not first line and and syntax is valid
 
         Args:
-            None
-        Raises:
-            InvalidFirstLine: if hub is in firt line
-            SyntaxHubError: if line has invalid format
+            prefix_line: (str) validate line with prefix line
         Returns:
             None
         """
