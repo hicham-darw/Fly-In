@@ -89,7 +89,7 @@ class Parser:
         Args:
             None
         Raises:
-            ParsingError: If the line does not match the expected syntax or if
+            ValueNbDronesError: If the line does not match the expected syntax or if
                 the value is not strictly positive.
         Returns:
             None
@@ -242,6 +242,7 @@ class Parser:
             KeyMetadataError: raised when unexpected key
             ValueTypeZoneError: when Value of Type Zone not valid
             ValueColorZoneError: when Value Color not a valid
+            ValueMaxDronesError: when Value max_drones not valid integer
 
         Returns:
             updated metadata if valid metadata
@@ -302,7 +303,9 @@ class Parser:
         Returns:
             A dictionary containing parsed metadata values.
         Raises:
-            ParsingError: If metadata syntax or values are invalid.
+            KeyValMetadataError: if metadata not contain (key=value)
+            KeyMetadataError: if key not valid
+            ValueMaxLinkCapacityError:  raised when MaxLinkCapacity not integer
         """
         metadata: ConnectionMetadata =\
             FactoryMetadata.get_metadata_of_connection()
@@ -444,8 +447,8 @@ class Parser:
         Args:
             None
         Raises:
-            ParsingError: start_hub or end_hub not initialized
-                or not read first_line
+            NotFoundError: start_hub or end_hub not initialized
+                or not readed first_line
         Return:
             None
         """
@@ -468,8 +471,7 @@ class Parser:
         Args:
             None
         Raises:
-            ParsingError: Internally raised for malformed input before being
-                caught and reported.
+            PrefixError: raised when found line start with different prefix
         Returns:
             None
         """
