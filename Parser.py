@@ -89,8 +89,8 @@ class Parser:
         Args:
             None
         Raises:
-            ValueNbDronesError: If the line does not match the expected syntax or if
-                the value is not strictly positive.
+            ValueNbDronesError: If the line does not match the expected syntax
+                or if the value is not strictly positive.
         Returns:
             None
         """
