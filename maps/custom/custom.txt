@@ -1,0 +1,12 @@
+nb_drones: 8
+
+start_hub: start -1 0
+hub: darwin 0 0 [color=cyan]
+hub: spoo 1 0 [color=green zone=priority]
+end_hub: jhonwick 2 0 [color=red]
+
+connection: start-darwin
+connection: start-spoo
+connection: spoo-jhonwick
+connection: darwin-jhonwick
+

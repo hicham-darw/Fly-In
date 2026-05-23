@@ -87,22 +87,22 @@ class Parser:
         """Parse the number of drones from a line.
 
         Args:
-            line: Input line containing the drone count.
+            None
         Raises:
-            ParsingError: If the line does not match the expected syntax or if
-                the value is not strictly positive.
+            ValueNbDronesError: If the line does not match the expected syntax
+                or if the value is not strictly positive.
         Returns:
             None
         """
         self.__is_valid_line('nb_drones')
         if self.nb_drones <= 0:
-            ValueNbDronesError(self.current_line, self.line_number)
+            raise ValueNbDronesError(self.current_line, self.line_number)
 
     def __parse_hub(self) -> None:
         """parse hub if matches syntax and store it
 
         Args:
-            line: (str): stripped line
+            None
         Returns:
             None
         """
@@ -133,7 +133,7 @@ class Parser:
         Args:
             None
         Raises:
-            InvalidFirstLineError: if is first line raised error
+            DuplicateNbDronesError: is duplicated nb_drones
             SyntaxDronesError:  if not a match format nb_drones
             ValueNbDronesError: if not valid number of drones
         Returns:
@@ -141,7 +141,7 @@ class Parser:
         """
         if not self.first_line:
             raise DuplicateNbDronesError(self.current_line, self.line_number)
-        match = re.match(r"nb_drones: [-+]?(\d+)$", self.current_line)
+        match = re.match(r"nb_drones: ([-+]?\d+)$", self.current_line)
         if not match:
             raise SyntaxDronesError(self.current_line, self.line_number)
         try:
@@ -196,10 +196,7 @@ class Parser:
         """ validate line with not first line and and syntax is valid
 
         Args:
-            None
-        Raises:
-            InvalidFirstLine: if hub is in firt line
-            SyntaxHubError: if line has invalid format
+            prefix_line: (str) validate line with prefix line
         Returns:
             None
         """
@@ -241,7 +238,12 @@ class Parser:
             key_val_data: list[str]: list contain key and value
             metadata: dict: contains default values of metadata
         Raises:
-            ParsingError: If the data is invalid
+            KeyValMetadataError: when found metadata not (key=value)
+            KeyMetadataError: raised when unexpected key
+            ValueTypeZoneError: when Value of Type Zone not valid
+            ValueColorZoneError: when Value Color not a valid
+            ValueMaxDronesError: when Value max_drones not valid integer
+
         Returns:
             updated metadata if valid metadata
         """
@@ -265,20 +267,13 @@ class Parser:
                 raise ValueMaxDronesError(self.current_line, self.line_number)
         else:
             raise KeyMetadataError(self.current_line, self.line_number)
-
-        max_drones = metadata[MetaDataOfHub.max_drones.name]
-        if max_drones < 0:
-            raise ValueMaxDronesError(self.current_line, self.line_number)
         return metadata
 
     def __parse_connection(self) -> None:
         """Parse a connection definition.
 
         Args:
-            line: Input line defining a connection between two hubs.
-        Raises:
-            ParsingError: If the syntax is invalid, if a referenced hub does
-                not exist, or if the connection is malformed.
+            None
         Returns:
             None
         """
@@ -308,7 +303,9 @@ class Parser:
         Returns:
             A dictionary containing parsed metadata values.
         Raises:
-            ParsingError: If metadata syntax or values are invalid.
+            KeyValMetadataError: if metadata not contain (key=value)
+            KeyMetadataError: if key not valid
+            ValueMaxLinkCapacityError:  raised when MaxLinkCapacity not integer
         """
         metadata: ConnectionMetadata =\
             FactoryMetadata.get_metadata_of_connection()
@@ -323,18 +320,12 @@ class Parser:
                     self.current_line, self.line_number
                 )
             try:
-                max_capacity = int(pairs[1])
+                metadata[MetaDataOfConnection.max_link_capacity.name]\
+                    = int(pairs[1])
             except ValueError:
                 raise ValueMaxLinkCapacityError(
                     self.current_line, self.line_number
                 )
-
-            if max_capacity < 0:
-                raise ValueMaxLinkCapacityError(
-                    self.current_line, self.line_number
-                )
-            metadata[MetaDataOfConnection.max_link_capacity.name]\
-                = int(pairs[1])
         return metadata
 
     def create_new_hub(
@@ -378,7 +369,8 @@ class Parser:
         Args:
             names_hub: str : contain two names separated by dash -
         Raises:
-            ParsingError if not a valid data
+            DuplicateConnectionError: if connection duplicated in file map
+            NotFoundNameHubError: not found hubs by these names
         Returns:
             return list[str] : list has two names froms hubs
         """
@@ -426,7 +418,7 @@ class Parser:
         Args:
             new_name: new_name of hub
         Raises:
-            ParsingError: if name already exists
+            DuplicateNameHub: if name already exists
         Returns:
             None
         """
@@ -455,8 +447,8 @@ class Parser:
         Args:
             None
         Raises:
-            ParsingError: start_hub or end_hub not initialized
-                or not read first_line
+            NotFoundError: start_hub or end_hub not initialized
+                or not readed first_line
         Return:
             None
         """
@@ -479,8 +471,7 @@ class Parser:
         Args:
             None
         Raises:
-            ParsingError: Internally raised for malformed input before being
-                caught and reported.
+            PrefixError: raised when found line start with different prefix
         Returns:
             None
         """
