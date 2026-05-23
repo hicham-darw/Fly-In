@@ -86,3 +86,49 @@ These visual cues improve the user experience by making route changes, bottlenec
 - Python `re` regular expressions: https://docs.python.org/3/library/re.html
 - ANSI escape codes for terminal color: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
 - ANSI escape codes for terminal color: https://cis106.com/bash/ANSI_escape_sequences/
+
+## Input File Example
+
+The input file defines the fleet size, hubs (zones), and their connections. According to the sources, the syntax looks like this:
+
+```
+nb_drones: 5
+start_hub: hub 0 0 [color=green]
+end_hub: goal 10 10 [color=yellow]
+hub: roof1 3 4 [zone=restricted color=red]
+hub: roof2 6 2 [zone=normal color=blue]
+hub: corridorA 4 3 [zone=priority color=green max_drones=2]
+hub: tunnelB 7 4 [zone=normal color=red]
+hub: obstacleX 5 5 [zone=blocked color=gray]
+connection: hub-roof1
+connection: hub-corridorA
+connection: roof1-roof2
+connection: roof2-goal
+connection: corridorA-tunnelB [max_link_capacity=2]
+connection: tunnelB-goal
+```
+
+Key Input Rules:
+
+- **First Line:** Must define the number of drones using `nb_drones: <positive_integer>`.
+- **Zones:** Each line must use a type prefix (`start_hub:`, `end_hub:`, or `hub:`) followed by a unique name and integer coordinates.
+- **Metadata:** Optional tags like `zone=`, `color=`, or `max_drones=` are placed in brackets `[...]`.
+- **Connections:** Defined as `connection: <name1>-<name2>`.
+
+## Simulation Output Example
+
+The output must represent the step-by-step movement of the drones, where each line corresponds to one simulation turn. The sources provide the following example of how these turns should be logged:
+
+```
+D1-roof1 D2-corridorA
+D1-roof2 D2-tunnelB
+D1-goal D2-goal
+```
+
+Key Output Rules:
+
+- **Format:** Each movement follows the format `D<ID>-<destination>` (e.g., `D1-roof1`).
+- **Restricted Zones:** If a drone is moving toward a restricted zone (which takes 2 turns), the output for the first turn should be `D<ID>-<connection>` to indicate the drone is "in flight".
+- **Omissions:** Drones that do not move during a turn are not included in that turn's output line.
+- **Termination:** Once a drone reaches the `end_hub`, it is considered delivered and is no longer tracked in the output. The simulation ends when all drones have reached the destination.
+
