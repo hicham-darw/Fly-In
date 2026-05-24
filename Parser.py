@@ -162,10 +162,16 @@ class Parser:
         """
         if self.first_line:
             raise InvalidFirstLineError(self.current_line, self.line_number)
-        match = re.match(
-            r"^(start_hub|end_hub|hub): [^ \-]+ [-+]?\d+ [-+]?\d+( \[.*\])?$",
-            self.current_line
-        )
+        if self.current_line.find('[') != -1 and self.current_line.find(']') != -1:
+            match = re.match(
+                r"^(start_hub|end_hub|hub): [^ \-]+ [-+]?\d+ [-+]?\d+ \[.*\]$",
+                self.current_line
+            )
+        else:
+            match = re.match(
+                r"^(start_hub|end_hub|hub): [^ \-]+ [-+]?\d+ [-+]?\d+$",
+                self.current_line
+            )
         if match is None:
             raise SyntaxHubError(self.current_line, self.line_number)
 
@@ -183,9 +189,15 @@ class Parser:
         if self.first_line:
             raise InvalidFirstLineError(self.current_line, self.line_number)
 
-        match = re.match(
-            r"^connection: [^ \-]+-[^ \-]+( \[.*\])?", self.current_line
-        )
+        if self.current_line.find('[') != -1 and self.current_line.find(']') != -1:
+            match = re.match(
+                r"^connection: [^ \-]+-[^ \-]+ \[.*\]$", self.current_line
+            )
+        else:
+            match = re.match(
+                r"^connection: [^ \-]+-[^ \-]+$", self.current_line
+            )
+            
         if match is None:
             raise SyntaxConnectionError(
                 self.current_line, self.line_number
